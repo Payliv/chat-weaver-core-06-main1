@@ -130,8 +130,7 @@ export const useDocumentManager = () => {
         content: base64Content,
         created_at: new Date().toISOString(),
         full_text: extractedText,
-        // L'analyse IA n'est plus effectuée automatiquement à l'upload
-        analysis: undefined,
+        analysis: undefined, // L'analyse IA n'est plus effectuée automatiquement à l'upload
       };
       console.log('File object created with extracted text. Skipping initial AI analysis.');
 
