@@ -1,15 +1,10 @@
 {
   "compilerOptions": {
-    "lib": ["deno.ns", "deno.window"],
-    "target": "ESNext",
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "allowJs": true,
-    "checkJs": true
+    "target": "esnext",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "lib": ["esnext", "dom", "dom.iterable"],
+    "types": ["./deno-types.d.ts"]
   },
-  "include": ["./**/*.ts"]
+  "include": ["**/*.ts"]
 }

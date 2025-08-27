@@ -3,11 +3,6 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { DocumentGeneratorService } from '@/services/documentGeneratorService';
 import type { UploadedFile, ChatMessage, RightPanelView } from '@/components/document-studio/types';
-import * as pdfjs from 'pdfjs-dist';
-import mammoth from 'mammoth';
-
-// Configuration pour le worker de pdf.js
-pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
 const CHUNK_SIZE = 1000; // Caractères par chunk pour les embeddings et l'IA
 const CHUNK_OVERLAP = 100; // Chevauchement entre les chunks
@@ -147,22 +142,25 @@ export const useDocumentStudio = () => {
       if (uploadError) throw uploadError;
 
       let extractedText = '';
-      if (file.type === 'application/pdf') {
-        const arrayBuffer = await file.arrayBuffer();
-        const loadingTask = pdfjs.getDocument({ data: arrayBuffer });
-        const pdf = await loadingTask.promise;
-        for (let i = 1; i <= pdf.numPages; i++) {
-          const page = await pdf.getPage(i);
-          const textContent = await page.getTextContent();
-          extractedText += textContent.items.map((item: any) => item.str).join(' ');
+      const reader = new FileReader();
+      const fileContentPromise = new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve((reader.result as string).split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      const base64Content = await fileContentPromise;
+
+      const { data: analysisData, error: analysisError } = await supabase.functions.invoke('file-analyze', {
+        body: {
+          fileBase64: base64Content,
+          fileName: file.name,
+          mime: file.type,
+          prompt: 'Extrait tout le texte de ce document. Réponds uniquement avec le texte brut.'
         }
-      } else if (file.type.includes('wordprocessingml')) {
-        const arrayBuffer = await file.arrayBuffer();
-        const result = await mammoth.extractRawText({ arrayBuffer });
-        extractedText = result.value;
-      } else {
-        extractedText = await file.text();
-      }
+      });
+
+      if (analysisError) throw analysisError;
+      extractedText = analysisData.generatedText || '';
 
       const { data: dbData, error: dbError } = await supabase
         .from('documents')
@@ -181,9 +179,9 @@ export const useDocumentStudio = () => {
 
       await loadFiles();
       toast({ title: "Document téléversé", description: `${file.name} a été ajouté avec succès.` });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error processing file:', error);
-      toast({ title: "Erreur", description: `Impossible de traiter le document.`, variant: "destructive" });
+      toast({ title: "Erreur", description: error.message || `Impossible de traiter le document.`, variant: "destructive" });
     } finally {
       setIsProcessing(false);
     }
