@@ -122,16 +122,16 @@ const getLanguageDisplayName = (lang: string) => {
   return langMap[lang.toLowerCase()] || lang.toUpperCase();
 };
 
-// Fonction pour nettoyer le texte des éléments markdown indésirables
-const cleanMarkdownText = (text: string) => {
-  let cleaned = text;
+// Fonction pour formater le texte markdown simple
+const formatMarkdownText = (text: string) => {
+  let formatted = text;
   // Supprimer les titres markdown (ex: # Titre, ## Sous-titre)
-  cleaned = cleaned.replace(/^(#+)\s*(.*)$/gm, '$2');
-  // Supprimer le gras markdown (ex: **texte en gras**)
-  cleaned = cleaned.replace(/\*\*(.*?)\*\*/g, '$1');
-  // Supprimer l'italique markdown (ex: *texte en italique*)
-  cleaned = cleaned.replace(/\*(.*?)\*/g, '$1');
-  return cleaned;
+  formatted = formatted.replace(/^(#+)\s*(.*)$/gm, '$2');
+  // Convertir le gras markdown en <strong>
+  formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  // Convertir l'italique markdown en <em>
+  formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>');
+  return formatted;
 };
 
 export const CodePreview = ({ content, isUser = false }: CodePreviewProps) => {
@@ -141,12 +141,13 @@ export const CodePreview = ({ content, isUser = false }: CodePreviewProps) => {
   const parts = parseContent(content);
   const hasCode = parts.some(part => part.type === 'code');
   
-  // Si aucun bloc de code n'est détecté, afficher le contenu nettoyé comme du texte simple
+  // Si aucun bloc de code n'est détecté, afficher le contenu formaté comme du texte simple
   if (!hasCode) {
     return (
-      <div className="text-sm leading-relaxed whitespace-pre-wrap">
-        {cleanMarkdownText(content)}
-      </div>
+      <div 
+        className="text-sm leading-relaxed whitespace-pre-wrap"
+        dangerouslySetInnerHTML={{ __html: formatMarkdownText(content) }}
+      />
     );
   }
   
@@ -181,9 +182,11 @@ export const CodePreview = ({ content, isUser = false }: CodePreviewProps) => {
       {parts.map((part, index) => {
         if (part.type === 'text') {
           return (
-            <div key={index} className="text-sm leading-relaxed whitespace-pre-wrap">
-              {cleanMarkdownText(part.content)}
-            </div>
+            <div 
+              key={index} 
+              className="text-sm leading-relaxed whitespace-pre-wrap"
+              dangerouslySetInnerHTML={{ __html: formatMarkdownText(part.content) }}
+            />
           );
         }
         
