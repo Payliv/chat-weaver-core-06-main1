@@ -95,7 +95,20 @@ export const DocumentViewer = ({ selectedFile, chatMessages, chatLoading, onSend
         </div>
 
         <TabsContent value="analysis" className="flex-1 overflow-y-auto m-0">
-          <ScrollArea className="h-full"><div className="p-6 prose prose-sm max-w-none">{selectedFile.analysis ? (<div><h3>Analyse du document</h3><pre className="whitespace-pre-wrap text-sm leading-relaxed font-sans bg-secondary/20 p-4 rounded-lg">{selectedFile.analysis}</pre></div>) : (<p>Aucune analyse disponible.</p>)}</div></ScrollArea>
+          <ScrollArea className="h-full"><div className="p-6 prose prose-sm max-w-none">
+            {selectedFile.full_text ? (
+              <>
+                {selectedFile.analysis && (
+                  <div className="mb-6">
+                    <h3>Résumé IA</h3>
+                    <pre className="whitespace-pre-wrap text-sm leading-relaxed font-sans bg-secondary/20 p-4 rounded-lg">{selectedFile.analysis}</pre>
+                  </div>
+                )}
+                <h3>Contenu complet du document</h3>
+                <pre className="whitespace-pre-wrap text-sm leading-relaxed font-sans bg-secondary/20 p-4 rounded-lg">{selectedFile.full_text}</pre>
+              </>
+            ) : (<p>Extraction du texte en cours ou échouée.</p>)}
+          </div></ScrollArea>
         </TabsContent>
         <TabsContent value="summary" className="flex-1 overflow-y-auto m-0">
           <ScrollArea className="h-full"><div className="p-6 prose prose-sm max-w-none">{selectedFile.summary ? (<div><h3>Résumé ({selectedFile.summary.type})</h3><pre className="whitespace-pre-wrap text-sm leading-relaxed font-sans bg-secondary/20 p-4 rounded-lg">{selectedFile.summary.content}</pre></div>) : (<p className="text-center text-muted-foreground p-8">Générez un résumé pour le voir ici.</p>)}</div></ScrollArea>

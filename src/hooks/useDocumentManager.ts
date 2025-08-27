@@ -2,7 +2,12 @@ import { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { DocumentGeneratorService } from '@/services/documentGeneratorService';
-import type { UploadedFile, ChatMessage } from '@/components/document-studio/types.ts';
+import type { UploadedFile, ChatMessage } from '@/components/document-studio/types';
+import * as pdfjs from 'pdfjs-dist';
+import mammoth from 'mammoth';
+
+// Configuration pour le worker de pdf.js
+pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
 export const useDocumentManager = () => {
   const { toast } = useToast();
@@ -90,21 +95,41 @@ export const useDocumentManager = () => {
         reader.readAsDataURL(file);
       });
 
+      let extractedText = '';
+      if (file.type === 'application/pdf') {
+        const loadingTask = pdfjs.getDocument({ data: atob(base64Content) });
+        const pdf = await loadingTask.promise;
+        let text = '';
+        for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const textContent = await page.getTextContent();
+            text += textContent.items.map((item: any) => item.str).join(' ');
+        }
+        extractedText = text;
+      } else if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+        const arrayBuffer = await file.arrayBuffer();
+        const result = await mammoth.extractRawText({ arrayBuffer });
+        extractedText = result.value;
+      } else if (file.type === 'text/plain') {
+        extractedText = await file.text();
+      }
+
       const newFile: UploadedFile = {
         id: crypto.randomUUID(),
         name: file.name,
         type: file.type,
         size: file.size,
         content: base64Content,
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
+        full_text: extractedText,
       };
 
       const { data, error } = await supabase.functions.invoke('file-analyze', {
         body: {
-          fileBase64: base64Content,
+          textContent: extractedText,
           fileName: file.name,
           mime: file.type,
-          prompt: 'Extrais l\'intégralité du texte de ce document. Ensuite, fournis un résumé détaillé de son contenu. Réponds en JSON avec les clés "full_text" et "summary".'
+          prompt: 'Fournis un résumé détaillé du contenu de ce document. Réponds en JSON avec la clé "summary".'
         }
       });
 
@@ -112,7 +137,6 @@ export const useDocumentManager = () => {
 
       try {
         const analysisResult = JSON.parse(data.generatedText);
-        newFile.full_text = analysisResult.full_text;
         newFile.analysis = analysisResult.summary;
       } catch {
         newFile.analysis = data.generatedText;
