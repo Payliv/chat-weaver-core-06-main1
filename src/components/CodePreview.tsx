@@ -122,6 +122,18 @@ const getLanguageDisplayName = (lang: string) => {
   return langMap[lang.toLowerCase()] || lang.toUpperCase();
 };
 
+// Fonction pour nettoyer le texte des éléments markdown indésirables
+const cleanMarkdownText = (text: string) => {
+  let cleaned = text;
+  // Supprimer les titres markdown (ex: # Titre, ## Sous-titre)
+  cleaned = cleaned.replace(/^(#+)\s*(.*)$/gm, '$2');
+  // Supprimer le gras markdown (ex: **texte en gras**)
+  cleaned = cleaned.replace(/\*\*(.*?)\*\*/g, '$1');
+  // Supprimer l'italique markdown (ex: *texte en italique*)
+  cleaned = cleaned.replace(/\*(.*?)\*/g, '$1');
+  return cleaned;
+};
+
 export const CodePreview = ({ content, isUser = false }: CodePreviewProps) => {
   const [expandedBlocks, setExpandedBlocks] = useState<Set<number>>(new Set());
   const { theme } = useTheme();
@@ -129,10 +141,11 @@ export const CodePreview = ({ content, isUser = false }: CodePreviewProps) => {
   const parts = parseContent(content);
   const hasCode = parts.some(part => part.type === 'code');
   
+  // Si aucun bloc de code n'est détecté, afficher le contenu nettoyé comme du texte simple
   if (!hasCode) {
     return (
       <div className="text-sm leading-relaxed whitespace-pre-wrap">
-        {content}
+        {cleanMarkdownText(content)}
       </div>
     );
   }
@@ -169,7 +182,7 @@ export const CodePreview = ({ content, isUser = false }: CodePreviewProps) => {
         if (part.type === 'text') {
           return (
             <div key={index} className="text-sm leading-relaxed whitespace-pre-wrap">
-              {part.content}
+              {cleanMarkdownText(part.content)}
             </div>
           );
         }

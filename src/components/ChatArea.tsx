@@ -15,6 +15,7 @@ import { aiService } from '@/services/aiService';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ImageService } from "@/services/imageService";
+import { TypingIndicator } from "./TypingIndicator";
 
 
 import { OpenRouterService } from "@/services/openRouterService";
@@ -629,15 +630,8 @@ export const ChatArea = ({ selectedModel, systemPrompt, safeMode, isLandingMode 
                 isLoading={isLoading}
                 autoRouterChoice={autoRouterChoice}
               />
-              <ChatMessage 
-                key="loading"
-                message={{
-                  id: "loading",
-                  content: "Génération en cours...",
-                  role: "assistant",
-                  timestamp: new Date(),
-                  model: selectedModel
-                }}
+              <TypingIndicator 
+                modelName={selectedModel === 'auto-router' && autoRouterChoice ? autoRouterChoice : selectedModel} 
               />
             </>
           )}
