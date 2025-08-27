@@ -88,15 +88,18 @@ export const useDocumentManager = () => {
 
     setIsProcessing(true);
     try {
+      console.log('Starting file upload and processing for:', file.name);
       const base64Content = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = (e) => resolve((e.target?.result as string).split(',')[1]);
         reader.onerror = reject;
         reader.readAsDataURL(file);
       });
+      console.log('File converted to Base64.');
 
       let extractedText = '';
       if (file.type === 'application/pdf') {
+        console.log('Extracting text from PDF...');
         const loadingTask = pdfjs.getDocument({ data: atob(base64Content) });
         const pdf = await loadingTask.promise;
         let text = '';
@@ -106,12 +109,17 @@ export const useDocumentManager = () => {
             text += textContent.items.map((item: any) => item.str).join(' ');
         }
         extractedText = text;
+        console.log('PDF text extracted. Length:', extractedText.length);
       } else if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+        console.log('Extracting text from DOCX...');
         const arrayBuffer = await file.arrayBuffer();
         const result = await mammoth.extractRawText({ arrayBuffer });
         extractedText = result.value;
+        console.log('DOCX text extracted. Length:', extractedText.length);
       } else if (file.type === 'text/plain') {
+        console.log('Extracting text from TXT...');
         extractedText = await file.text();
+        console.log('TXT text extracted. Length:', extractedText.length);
       }
 
       const newFile: UploadedFile = {
@@ -123,6 +131,7 @@ export const useDocumentManager = () => {
         created_at: new Date().toISOString(),
         full_text: extractedText,
       };
+      console.log('File object created, invoking Supabase function...');
 
       const { data, error } = await supabase.functions.invoke('file-analyze', {
         body: {
@@ -133,12 +142,18 @@ export const useDocumentManager = () => {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase function invocation error:', error);
+        throw error;
+      }
+      console.log('Supabase function returned data.');
 
       try {
         const analysisResult = JSON.parse(data.generatedText);
         newFile.analysis = analysisResult.summary;
-      } catch {
+        console.log('AI analysis parsed successfully.');
+      } catch (parseError) {
+        console.warn('Failed to parse AI analysis as JSON, using raw text. Error:', parseError);
         newFile.analysis = data.generatedText;
       }
 
@@ -149,8 +164,8 @@ export const useDocumentManager = () => {
 
       toast({ title: "Fichier traité", description: `${file.name} a été uploadé et analysé.` });
     } catch (error) {
-      console.error('Error processing file:', error);
-      toast({ title: "Erreur", description: "Impossible de traiter le document.", variant: "destructive" });
+      console.error('Error processing file in handleFileUpload:', error);
+      toast({ title: "Erreur", description: `Impossible de traiter le document. Détails: ${error instanceof Error ? error.message : String(error)}`, variant: "destructive" });
     } finally {
       setIsProcessing(false);
     }
