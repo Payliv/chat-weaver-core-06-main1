@@ -3,6 +3,11 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { DocumentGeneratorService } from '@/services/documentGeneratorService';
 import type { UploadedFile, ChatMessage, RightPanelView } from '@/components/document-studio/types';
+import mammoth from 'mammoth';
+import * as pdfjs from 'pdfjs-dist';
+
+// Set up PDF.js worker from a reliable CDN
+pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
 const CHUNK_SIZE = 1000; // Caractères par chunk pour les embeddings et l'IA
 const CHUNK_OVERLAP = 100; // Chevauchement entre les chunks
@@ -137,31 +142,40 @@ export const useDocumentStudio = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Utilisateur non authentifié");
 
+      // 1. Extract text on client-side
+      let extractedText = '';
+      const arrayBuffer = await file.arrayBuffer();
+
+      if (file.type === 'application/pdf') {
+        const pdf = await pdfjs.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
+        let textContent = '';
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const content = await page.getTextContent();
+          textContent += content.items.map(item => ('str' in item ? item.str : '')).join(' ');
+        }
+        extractedText = textContent;
+      } else if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+        const result = await mammoth.extractRawText({ arrayBuffer });
+        extractedText = result.value;
+      } else { // text/plain
+        extractedText = new TextDecoder().decode(arrayBuffer);
+      }
+
+      if (!extractedText.trim()) {
+        toast({
+          title: "Avertissement",
+          description: "Aucun texte n'a pu être extrait de ce document. Il pourrait s'agir d'un document basé sur des images.",
+          variant: "default",
+        });
+      }
+
+      // 2. Upload original file to storage
       const filePath = `${user.id}/${Date.now()}-${file.name}`;
       const { error: uploadError } = await supabase.storage.from('documents').upload(filePath, file);
       if (uploadError) throw uploadError;
 
-      let extractedText = '';
-      const reader = new FileReader();
-      const fileContentPromise = new Promise<string>((resolve, reject) => {
-        reader.onload = () => resolve((reader.result as string).split(',')[1]);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-      const base64Content = await fileContentPromise;
-
-      const { data: analysisData, error: analysisError } = await supabase.functions.invoke('file-analyze', {
-        body: {
-          fileBase64: base64Content,
-          fileName: file.name,
-          mime: file.type,
-          prompt: 'Extrait tout le texte de ce document. Réponds uniquement avec le texte brut.'
-        }
-      });
-
-      if (analysisError) throw analysisError;
-      extractedText = analysisData.generatedText || '';
-
+      // 3. Save metadata and extracted text to database
       const { data: dbData, error: dbError } = await supabase
         .from('documents')
         .insert({
@@ -170,7 +184,7 @@ export const useDocumentStudio = () => {
           file_type: file.type,
           file_size: file.size,
           storage_path: filePath,
-          extracted_text: extractedText,
+          extracted_text: extractedText.trim() || null, // Save null if empty
         })
         .select()
         .single();
