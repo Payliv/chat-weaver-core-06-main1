@@ -23,35 +23,46 @@ export const useDocumentStudio = () => {
   const [chatLoading, setChatLoading] = useState(false);
   const [rightPanelView, setRightPanelView] = useState<RightPanelView>('preview');
 
-  // Ref pour stocker les embeddings du document sélectionné
   const documentEmbeddingsRef = useRef<number[][] | null>(null);
   const documentChunksRef = useRef<string[] | null>(null);
 
-  useEffect(() => {
-    loadFiles();
-  }, []);
-
-  const loadFiles = useCallback(() => {
+  const loadFiles = useCallback(async () => {
     setLoading(true);
     try {
-      const savedFiles = localStorage.getItem('document_studio_files');
-      if (savedFiles) {
-        const files: UploadedFile[] = JSON.parse(savedFiles);
-        setUploadedFiles(files);
-        if (files.length > 0 && !selectedFile) {
-          selectFile(files[0]);
-        }
+      const { data, error } = await supabase
+        .from('documents')
+        .select('id, user_id, original_filename, file_type, file_size, storage_path, extracted_text, created_at')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const files: UploadedFile[] = data.map(doc => ({
+        id: doc.id,
+        user_id: doc.user_id,
+        name: doc.original_filename,
+        type: doc.file_type,
+        size: doc.file_size,
+        content: '', // Will be loaded on demand
+        full_text: doc.extracted_text || '',
+        storage_path: doc.storage_path,
+        created_at: doc.created_at,
+      }));
+
+      setUploadedFiles(files);
+      if (files.length > 0 && !selectedFile) {
+        await selectFile(files[0]);
       }
     } catch (error) {
       console.error('Error loading files:', error);
+      toast({ title: "Erreur", description: "Impossible de charger les documents.", variant: "destructive" });
     } finally {
       setLoading(false);
     }
   }, [selectedFile]);
 
-  const saveFilesToStorage = (files: UploadedFile[]) => {
-    localStorage.setItem('document_studio_files', JSON.stringify(files));
-  };
+  useEffect(() => {
+    loadFiles();
+  }, []);
 
   const loadChatHistory = useCallback((fileId: string) => {
     const savedChat = localStorage.getItem(`document_chat_history_${fileId}`);
@@ -73,40 +84,50 @@ export const useDocumentStudio = () => {
   };
 
   const selectFile = useCallback(async (file: UploadedFile | null) => {
+    if (file && file.id === selectedFile?.id) return;
+
     setSelectedFile(file);
     if (file) {
       loadChatHistory(file.id);
-      // Charger les embeddings et chunks du document sélectionné
-      if (file.full_text && (!file.embeddings || file.embeddings.length === 0)) {
+      
+      // Load file content for preview
+      if (!file.content) {
         setIsProcessing(true);
         try {
-          const chunks = chunkText(file.full_text);
-          const embeddings = await generateEmbeddings(chunks);
-          documentEmbeddingsRef.current = embeddings;
-          documentChunksRef.current = chunks;
-          updateFile({ ...file, embeddings });
+          const { data, error } = await supabase.storage.from('documents').download(file.storage_path);
+          if (error) throw error;
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const base64Content = (reader.result as string).split(',')[1];
+            const updatedFile = { ...file, content: base64Content };
+            setSelectedFile(updatedFile);
+            const updatedFiles = uploadedFiles.map(f => f.id === file.id ? updatedFile : f);
+            setUploadedFiles(updatedFiles);
+          };
+          reader.readAsDataURL(data);
         } catch (error) {
-          console.error('Error generating embeddings for selected file:', error);
-          toast({ title: "Erreur", description: "Impossible de générer les embeddings pour le document.", variant: "destructive" });
+          console.error("Error downloading file content:", error);
+          toast({ title: "Erreur", description: "Impossible de charger le contenu du fichier.", variant: "destructive" });
         } finally {
           setIsProcessing(false);
         }
-      } else {
-        documentEmbeddingsRef.current = file.embeddings || null;
-        documentChunksRef.current = file.full_text ? chunkText(file.full_text) : null;
       }
-      setRightPanelView('preview'); // Revenir à la prévisualisation après sélection
+
+      if (file.full_text) {
+        documentChunksRef.current = chunkText(file.full_text);
+        // Embeddings should be handled separately if needed
+      }
+      setRightPanelView('preview');
     } else {
       setChatMessages([]);
       documentEmbeddingsRef.current = null;
       documentChunksRef.current = null;
     }
-  }, [loadChatHistory]);
+  }, [loadChatHistory, selectedFile, uploadedFiles]);
 
   const updateFile = (updatedFile: UploadedFile) => {
     const updatedFiles = uploadedFiles.map(f => f.id === updatedFile.id ? updatedFile : f);
     setUploadedFiles(updatedFiles);
-    saveFilesToStorage(updatedFiles);
     setSelectedFile(updatedFile);
   };
 
@@ -118,56 +139,51 @@ export const useDocumentStudio = () => {
 
     setIsProcessing(true);
     try {
-      const base64Content = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = (e) => resolve((e.target?.result as string).split(',')[1]);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Utilisateur non authentifié");
+
+      const filePath = `${user.id}/${Date.now()}-${file.name}`;
+      const { error: uploadError } = await supabase.storage.from('documents').upload(filePath, file);
+      if (uploadError) throw uploadError;
 
       let extractedText = '';
       if (file.type === 'application/pdf') {
-        const loadingTask = pdfjs.getDocument({ data: atob(base64Content) });
+        const arrayBuffer = await file.arrayBuffer();
+        const loadingTask = pdfjs.getDocument({ data: arrayBuffer });
         const pdf = await loadingTask.promise;
-        let text = '';
         for (let i = 1; i <= pdf.numPages; i++) {
-            const page = await pdf.getPage(i);
-            const textContent = await page.getTextContent();
-            text += textContent.items.map((item: any) => item.str).join(' ');
+          const page = await pdf.getPage(i);
+          const textContent = await page.getTextContent();
+          extractedText += textContent.items.map((item: any) => item.str).join(' ');
         }
-        extractedText = text;
-      } else if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+      } else if (file.type.includes('wordprocessingml')) {
         const arrayBuffer = await file.arrayBuffer();
         const result = await mammoth.extractRawText({ arrayBuffer });
         extractedText = result.value;
-      } else if (file.type === 'text/plain') {
+      } else {
         extractedText = await file.text();
       }
 
-      // Générer les embeddings pour le nouveau document
-      const chunks = chunkText(extractedText);
-      const embeddings = await generateEmbeddings(chunks);
+      const { data: dbData, error: dbError } = await supabase
+        .from('documents')
+        .insert({
+          user_id: user.id,
+          original_filename: file.name,
+          file_type: file.type,
+          file_size: file.size,
+          storage_path: filePath,
+          extracted_text: extractedText,
+        })
+        .select()
+        .single();
 
-      const newFile: UploadedFile = {
-        id: crypto.randomUUID(),
-        name: file.name,
-        type: file.type,
-        size: file.size,
-        content: base64Content,
-        full_text: extractedText,
-        created_at: new Date().toISOString(),
-        embeddings: embeddings,
-      };
+      if (dbError) throw dbError;
 
-      const updatedFiles = [newFile, ...uploadedFiles];
-      setUploadedFiles(updatedFiles);
-      saveFilesToStorage(updatedFiles);
-      selectFile(newFile);
-
-      toast({ title: "Document prêt", description: `${file.name} a été uploadé et son texte extrait.` });
+      await loadFiles();
+      toast({ title: "Document téléversé", description: `${file.name} a été ajouté avec succès.` });
     } catch (error) {
-      console.error('Error processing file in handleFileUpload:', error);
-      toast({ title: "Erreur", description: `Impossible de traiter le document. Détails: ${error instanceof Error ? error.message : String(error)}`, variant: "destructive" });
+      console.error('Error processing file:', error);
+      toast({ title: "Erreur", description: `Impossible de traiter le document.`, variant: "destructive" });
     } finally {
       setIsProcessing(false);
     }
@@ -181,33 +197,6 @@ export const useDocumentStudio = () => {
     return chunks;
   };
 
-  const generateEmbeddings = async (texts: string[]): Promise<number[][]> => {
-    const { data, error } = await supabase.functions.invoke('openai-embed', {
-      body: { input: texts }
-    });
-    if (error) throw error;
-    return data.embeddings;
-  };
-
-  const findRelevantChunks = async (query: string): Promise<string[]> => {
-    if (!documentEmbeddingsRef.current || !documentChunksRef.current) return [];
-
-    const queryEmbedding = (await generateEmbeddings([query]))[0];
-
-    // Calculer la similarité cosinus (simple pour la démo)
-    const similarities = documentEmbeddingsRef.current.map((docEmbedding, index) => {
-      let dotProduct = 0;
-      for (let i = 0; i < queryEmbedding.length; i++) {
-        dotProduct += queryEmbedding[i] * docEmbedding[i];
-      }
-      // Normalisation (assumant que les embeddings sont déjà normalisés)
-      return { score: dotProduct, chunk: documentChunksRef.current![index] };
-    });
-
-    similarities.sort((a, b) => b.score - a.score);
-    return similarities.slice(0, 3).map(s => s.chunk); // Retourne les 3 chunks les plus pertinents
-  };
-
   const sendChatMessage = async (message: string) => {
     if (!selectedFile) return;
 
@@ -217,13 +206,11 @@ export const useDocumentStudio = () => {
     setChatLoading(true);
 
     try {
-      const relevantChunks = await findRelevantChunks(message);
-      const context = `Document: "${selectedFile.name}"\n\nContenu pertinent:\n${relevantChunks.join('\n---\n')}\n\nQuestion:`;
-      
+      const context = `Document: "${selectedFile.name}"\n\nContenu:\n${selectedFile.full_text?.substring(0, 8000)}\n\nQuestion:`;
       const { data, error } = await supabase.functions.invoke('openai-chat', {
         body: {
           messages: [
-            { role: 'system', content: 'Tu es un assistant IA spécialisé dans l\'analyse de documents. Réponds de manière précise en te basant sur le contenu fourni. Si le contenu pertinent ne contient pas la réponse, indique-le.' },
+            { role: 'system', content: 'Tu es un assistant IA spécialisé dans l\'analyse de documents. Réponds de manière précise en te basant sur le contenu fourni.' },
             { role: 'user', content: `${context}\n${message}` }
           ],
           model: 'gpt-4o-mini'
@@ -237,7 +224,6 @@ export const useDocumentStudio = () => {
       saveChatHistory(selectedFile.id, finalMessages);
     } catch (error) {
       console.error('Error sending message:', error);
-      toast({ title: "Erreur d'envoi", description: error instanceof Error ? error.message : String(error), variant: "destructive" });
     } finally {
       setChatLoading(false);
     }
@@ -255,7 +241,7 @@ export const useDocumentStudio = () => {
       toast({ title: "Résumé généré" });
       setRightPanelView('summary');
     } catch (error) {
-      toast({ title: "Erreur de résumé", description: error instanceof Error ? error.message : String(error), variant: "destructive" });
+      toast({ title: "Erreur de résumé", variant: "destructive" });
     } finally {
       setIsProcessing(false);
     }
@@ -272,7 +258,7 @@ export const useDocumentStudio = () => {
       toast({ title: "Traduction terminée" });
       setRightPanelView('translation');
     } catch (error) {
-      toast({ title: "Erreur de traduction", description: error instanceof Error ? error.message : String(error), variant: "destructive" });
+      toast({ title: "Erreur de traduction", variant: "destructive" });
     } finally {
       setIsProcessing(false);
     }
@@ -289,43 +275,36 @@ export const useDocumentStudio = () => {
       a.click();
       toast({ title: `Conversion en ${format.toUpperCase()} réussie` });
     } catch (error) {
-      toast({ title: "Erreur de conversion", description: error instanceof Error ? error.message : String(error), variant: "destructive" });
+      toast({ title: "Erreur de conversion", variant: "destructive" });
     } finally {
       setIsProcessing(false);
     }
   };
 
-  const deleteFile = (id: string) => {
-    const updatedFiles = uploadedFiles.filter(f => f.id !== id);
-    setUploadedFiles(updatedFiles);
-    saveFilesToStorage(updatedFiles);
-    if (selectedFile?.id === id) {
-      selectFile(updatedFiles[0] || null);
+  const deleteFile = async (id: string) => {
+    const fileToDelete = uploadedFiles.find(f => f.id === id);
+    if (!fileToDelete) return;
+
+    try {
+      await supabase.storage.from('documents').remove([fileToDelete.storage_path]);
+      await supabase.from('documents').delete().eq('id', id);
+      
+      const updatedFiles = uploadedFiles.filter(f => f.id !== id);
+      setUploadedFiles(updatedFiles);
+      if (selectedFile?.id === id) {
+        selectFile(updatedFiles[0] || null);
+      }
+      localStorage.removeItem(`document_chat_history_${id}`);
+      toast({ title: "Fichier supprimé" });
+    } catch (error) {
+      toast({ title: "Erreur", description: "Impossible de supprimer le fichier.", variant: "destructive" });
     }
-    localStorage.removeItem(`document_chat_history_${id}`);
-    toast({ title: "Fichier supprimé" });
   };
 
-  const downloadFile = (file: UploadedFile, format?: 'pdf' | 'docx' | 'txt') => {
-    let dataUri = `data:${file.type};base64,${file.content}`;
-    let fileName = file.name;
-
-    if (format === 'txt') {
-      dataUri = `data:text/plain;base64,${btoa(file.full_text)}`;
-      fileName = `${file.name.split('.')[0]}.txt`;
-    } else if (format === 'pdf' && file.type !== 'application/pdf') {
-      // Convert to PDF if not already PDF
-      handleConvert('pdf');
-      return;
-    } else if (format === 'docx' && file.type !== 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
-      // Convert to DOCX if not already DOCX
-      handleConvert('docx');
-      return;
-    }
-
+  const downloadFile = (file: UploadedFile) => {
     const link = document.createElement('a');
-    link.href = dataUri;
-    link.download = fileName;
+    link.href = `data:${file.type};base64,${file.content}`;
+    link.download = file.name;
     link.click();
   };
 

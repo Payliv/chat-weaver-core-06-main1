@@ -6,10 +6,21 @@ import type { UploadedFile } from './types.ts';
 interface DocumentPreviewProps {
   selectedFile: UploadedFile | null;
   isProcessing: boolean;
-  onDownloadFile: (file: UploadedFile, format?: 'pdf' | 'docx' | 'txt') => void;
+  onDownloadFile: (file: UploadedFile) => void;
 }
 
 export const DocumentPreview = ({ selectedFile, isProcessing, onDownloadFile }: DocumentPreviewProps) => {
+  if (isProcessing && !selectedFile) {
+    return (
+      <div className="flex-1 flex items-center justify-center p-4">
+        <div className="text-center text-muted-foreground">
+          <Loader2 className="w-8 h-8 mx-auto mb-2 animate-spin" />
+          <p className="text-sm">Traitement du document...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!selectedFile) {
     return (
       <div className="flex-1 flex items-center justify-center p-4">
@@ -23,12 +34,14 @@ export const DocumentPreview = ({ selectedFile, isProcessing, onDownloadFile }: 
   }
 
   return (
-    <div className="flex-1 flex flex-col">
+    <div className="flex-1 flex flex-col h-full">
       <div className="border-b bg-card p-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Eye className="w-5 h-5" />
-            <h2 className="font-semibold text-lg">{selectedFile.name}</h2>
+          <div className="flex items-center gap-2 min-w-0">
+            <Eye className="w-5 h-5 flex-shrink-0" />
+            <h2 className="font-semibold text-lg truncate" title={selectedFile.name}>
+              {selectedFile.name}
+            </h2>
           </div>
           <Button variant="outline" size="sm" onClick={() => onDownloadFile(selectedFile)} disabled={isProcessing}>
             <Download className="w-4 h-4 mr-2" />
@@ -36,18 +49,23 @@ export const DocumentPreview = ({ selectedFile, isProcessing, onDownloadFile }: 
           </Button>
         </div>
       </div>
-      <ScrollArea className="flex-1 p-6">
-        {isProcessing ? (
-          <div className="text-center py-8 text-muted-foreground">
-            <Loader2 className="w-8 h-8 mx-auto mb-2 animate-spin" />
-            <p className="text-sm">Traitement du document...</p>
-          </div>
+      <div className="flex-1 bg-muted/20 overflow-hidden">
+        {selectedFile.type === 'application/pdf' && selectedFile.content ? (
+          <iframe
+            src={`data:application/pdf;base64,${selectedFile.content}`}
+            className="w-full h-full border-none"
+            title={selectedFile.name}
+          />
         ) : (
-          <div className="prose prose-sm max-w-none">
-            <pre className="whitespace-pre-wrap text-sm leading-relaxed font-sans">{selectedFile.full_text}</pre>
-          </div>
+          <ScrollArea className="h-full p-6">
+            <div className="prose prose-sm max-w-none dark:prose-invert">
+              <pre className="whitespace-pre-wrap text-sm leading-relaxed font-sans bg-transparent p-0">
+                {selectedFile.full_text || "Aucun texte extrait pour ce document."}
+              </pre>
+            </div>
+          </ScrollArea>
         )}
-      </ScrollArea>
+      </div>
     </div>
   );
 };

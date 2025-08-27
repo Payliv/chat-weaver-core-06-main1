@@ -112,6 +112,50 @@ export type Database = {
           },
         ]
       }
+      documents: {
+        Row: {
+          id: string
+          user_id: string
+          original_filename: string
+          file_type: string
+          file_size: number
+          storage_path: string
+          extracted_text: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          original_filename: string
+          file_type: string
+          file_size: number
+          storage_path: string
+          extracted_text?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          original_filename?: string
+          file_type?: string
+          file_size?: number
+          storage_path?: string
+          extracted_text?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       ebook_chapters: {
         Row: {
           chapter_content: string

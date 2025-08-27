@@ -1,14 +1,16 @@
 export interface UploadedFile {
   id: string;
-  name: string;
-  type: string; // Mime type
-  size: number;
-  content: string; // Base64 content
-  full_text: string; // Extracted text content
+  user_id: string;
+  name: string; // Corresponds to original_filename
+  type: string; // Corresponds to file_type
+  size: number; // Corresponds to file_size
+  content: string; // Base64 content for preview
+  full_text: string; // Corresponds to extracted_text
+  storage_path: string;
   created_at: string;
   summary?: { type: string; content: string };
   translation?: { lang: string; content: string };
-  embeddings?: number[][]; // Embeddings des chunks du document
+  embeddings?: number[][];
 }
 
 export interface ChatMessage {
@@ -18,4 +20,4 @@ export interface ChatMessage {
   timestamp: string;
 }
 
-export type RightPanelView = 'preview' | 'chat' | 'summary' | 'translation';
+export type RightPanelView = 'preview' | 'chat' | 'summary' | 'translation' | 'actions';
