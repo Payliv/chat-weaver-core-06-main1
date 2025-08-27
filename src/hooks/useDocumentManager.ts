@@ -53,12 +53,12 @@ export const useDocumentManager = () => {
       const welcomeMessage: ChatMessage = {
         id: crypto.randomUUID(),
         role: 'assistant',
-        content: `Bonjour ! Je peux vous aider à analyser ce document. ${selectedFile?.analysis ? 'Le document a déjà été analysé.' : 'Posez-moi vos questions.'}`,
+        content: `Bonjour ! Le document est prêt. Vous pouvez maintenant me poser des questions sur son contenu ou utiliser les actions IA pour le résumer ou le traduire.`,
         timestamp: new Date().toISOString()
       };
       setChatMessages([welcomeMessage]);
     }
-  }, [selectedFile?.analysis]);
+  }, []);
 
   const saveChatHistory = (fileId: string, messages: ChatMessage[]) => {
     localStorage.setItem(`document_chat_${fileId}`, JSON.stringify(messages));
@@ -88,7 +88,7 @@ export const useDocumentManager = () => {
 
     setIsProcessing(true);
     try {
-      console.log('Starting file upload and processing for:', file.name);
+      console.log('Starting file upload and text extraction for:', file.name);
       const base64Content = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = (e) => resolve((e.target?.result as string).split(',')[1]);
@@ -130,39 +130,17 @@ export const useDocumentManager = () => {
         content: base64Content,
         created_at: new Date().toISOString(),
         full_text: extractedText,
+        // L'analyse IA n'est plus effectuée automatiquement à l'upload
+        analysis: undefined,
       };
-      console.log('File object created, invoking Supabase function...');
-
-      const { data, error } = await supabase.functions.invoke('file-analyze', {
-        body: {
-          textContent: extractedText,
-          fileName: file.name,
-          mime: file.type,
-          prompt: 'Fournis un résumé détaillé du contenu de ce document. Réponds en JSON avec la clé "summary".'
-        }
-      });
-
-      if (error) {
-        console.error('Supabase function invocation error:', error);
-        throw error;
-      }
-      console.log('Supabase function returned data.');
-
-      try {
-        const analysisResult = JSON.parse(data.generatedText);
-        newFile.analysis = analysisResult.summary;
-        console.log('AI analysis parsed successfully.');
-      } catch (parseError) {
-        console.warn('Failed to parse AI analysis as JSON, using raw text. Error:', parseError);
-        newFile.analysis = data.generatedText;
-      }
+      console.log('File object created with extracted text. Skipping initial AI analysis.');
 
       const updatedFiles = [newFile, ...uploadedFiles];
       setUploadedFiles(updatedFiles);
       saveFilesToStorage(updatedFiles);
       selectFile(newFile);
 
-      toast({ title: "Fichier traité", description: `${file.name} a été uploadé et analysé.` });
+      toast({ title: "Document prêt", description: `${file.name} a été uploadé et son texte extrait.` });
     } catch (error) {
       console.error('Error processing file in handleFileUpload:', error);
       toast({ title: "Erreur", description: `Impossible de traiter le document. Détails: ${error instanceof Error ? error.message : String(error)}`, variant: "destructive" });

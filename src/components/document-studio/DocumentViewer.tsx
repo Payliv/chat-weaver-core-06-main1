@@ -87,7 +87,7 @@ export const DocumentViewer = ({ selectedFile, chatMessages, chatLoading, onSend
       <Tabs value={rightPanelView} onValueChange={(value) => setRightPanelView(value as RightPanelView)} className="flex-1 flex flex-col">
         <div className="px-4 pt-4 border-b">
           <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="analysis" className="flex items-center gap-1"><Eye className="w-4 h-4" />Analyse</TabsTrigger>
+            <TabsTrigger value="analysis" className="flex items-center gap-1"><Eye className="w-4 h-4" />Contenu</TabsTrigger>
             <TabsTrigger value="summary" disabled={!selectedFile.summary} className="flex items-center gap-1"><FileSignature className="w-4 h-4" />Résumé</TabsTrigger>
             <TabsTrigger value="translation" disabled={!selectedFile.translation} className="flex items-center gap-1"><Languages className="w-4 h-4" />Traduction</TabsTrigger>
             <TabsTrigger value="chat" className="flex items-center gap-1"><MessageSquare className="w-4 h-4" />Chat IA</TabsTrigger>
@@ -98,12 +98,6 @@ export const DocumentViewer = ({ selectedFile, chatMessages, chatLoading, onSend
           <ScrollArea className="h-full"><div className="p-6 prose prose-sm max-w-none">
             {selectedFile.full_text ? (
               <>
-                {selectedFile.analysis && (
-                  <div className="mb-6">
-                    <h3>Résumé IA</h3>
-                    <pre className="whitespace-pre-wrap text-sm leading-relaxed font-sans bg-secondary/20 p-4 rounded-lg">{selectedFile.analysis}</pre>
-                  </div>
-                )}
                 <h3>Contenu complet du document</h3>
                 <pre className="whitespace-pre-wrap text-sm leading-relaxed font-sans bg-secondary/20 p-4 rounded-lg">{selectedFile.full_text}</pre>
               </>
