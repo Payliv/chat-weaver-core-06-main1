@@ -4,7 +4,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Eye, MessageSquare, Wand2, FileDown, FileUp, Upload } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Eye, MessageSquare, Wand2, FileDown, FileUp, Upload, Languages, FileSignature } from 'lucide-react';
 import type { UploadedFile, RightPanelView } from './types.ts';
 import { ChatView } from './ChatView.tsx';
 
@@ -47,11 +48,11 @@ export const DocumentViewer = ({ selectedFile, chatMessages, chatLoading, onSend
 
   if (!selectedFile) {
     return (
-      <div className="flex-1 flex items-center justify-center">
+      <div className="flex-1 flex items-center justify-center p-4">
         <div className="text-center">
           <Upload className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-lg font-semibold mb-2">Sélectionnez un document</h3>
-          <p className="text-muted-foreground mb-4">Uploadez un document pour commencer</p>
+          <h3 className="text-lg font-semibold mb-2">Sélectionnez ou ajoutez un document</h3>
+          <p className="text-muted-foreground mb-4">Uploadez un document pour commencer à l'analyser.</p>
         </div>
       </div>
     );
@@ -72,8 +73,8 @@ export const DocumentViewer = ({ selectedFile, chatMessages, chatLoading, onSend
             <DropdownMenu>
               <DropdownMenuTrigger asChild><Button variant="default" disabled={isProcessing}><Wand2 className="w-4 h-4 mr-2" />Actions IA</Button></DropdownMenuTrigger>
               <DropdownMenuContent>
-                <DialogTrigger asChild><DropdownMenuItem onSelect={() => setShowSummaryDialog(true)}>Résumer</DropdownMenuItem></DialogTrigger>
-                <DialogTrigger asChild><DropdownMenuItem onSelect={() => setShowTranslateDialog(true)}>Traduire</DropdownMenuItem></DialogTrigger>
+                <DialogTrigger asChild><DropdownMenuItem onSelect={() => setShowSummaryDialog(true)}><FileSignature className="w-4 h-4 mr-2" />Résumer</DropdownMenuItem></DialogTrigger>
+                <DialogTrigger asChild><DropdownMenuItem onSelect={() => setShowTranslateDialog(true)}><Languages className="w-4 h-4 mr-2" />Traduire</DropdownMenuItem></DialogTrigger>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => onConvert('pdf')}><FileDown className="w-4 h-4 mr-2" />Convertir en PDF</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => onConvert('docx')}><FileUp className="w-4 h-4 mr-2" />Convertir en Word</DropdownMenuItem>
@@ -81,40 +82,48 @@ export const DocumentViewer = ({ selectedFile, chatMessages, chatLoading, onSend
             </DropdownMenu>
           </div>
         </div>
-        <div className="mt-4 grid grid-cols-2 gap-2">
-          <Button variant={rightPanelView === 'analysis' ? 'secondary' : 'ghost'} onClick={() => setRightPanelView('analysis')} className="flex-1"><Eye className="w-4 h-4 mr-2" />Analyse</Button>
-          <Button variant={rightPanelView === 'chat' ? 'secondary' : 'ghost'} onClick={() => setRightPanelView('chat')} className="flex-1"><MessageSquare className="w-4 h-4 mr-2" />Chat IA</Button>
+      </div>
+      
+      <Tabs value={rightPanelView} onValueChange={(value) => setRightPanelView(value as RightPanelView)} className="flex-1 flex flex-col">
+        <div className="px-4 pt-4 border-b">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="analysis" className="flex items-center gap-1"><Eye className="w-4 h-4" />Analyse</TabsTrigger>
+            <TabsTrigger value="summary" disabled={!selectedFile.summary} className="flex items-center gap-1"><FileSignature className="w-4 h-4" />Résumé</TabsTrigger>
+            <TabsTrigger value="translation" disabled={!selectedFile.translation} className="flex items-center gap-1"><Languages className="w-4 h-4" />Traduction</TabsTrigger>
+            <TabsTrigger value="chat" className="flex items-center gap-1"><MessageSquare className="w-4 h-4" />Chat IA</TabsTrigger>
+          </TabsList>
         </div>
-      </div>
-      <div className="flex-1 overflow-hidden">
-        {rightPanelView === 'chat' ? (
+
+        <TabsContent value="analysis" className="flex-1 overflow-y-auto m-0">
+          <ScrollArea className="h-full"><div className="p-6 prose prose-sm max-w-none">{selectedFile.analysis ? (<div><h3>Analyse du document</h3><pre className="whitespace-pre-wrap text-sm leading-relaxed font-sans bg-secondary/20 p-4 rounded-lg">{selectedFile.analysis}</pre></div>) : (<p>Aucune analyse disponible.</p>)}</div></ScrollArea>
+        </TabsContent>
+        <TabsContent value="summary" className="flex-1 overflow-y-auto m-0">
+          <ScrollArea className="h-full"><div className="p-6 prose prose-sm max-w-none">{selectedFile.summary ? (<div><h3>Résumé ({selectedFile.summary.type})</h3><pre className="whitespace-pre-wrap text-sm leading-relaxed font-sans bg-secondary/20 p-4 rounded-lg">{selectedFile.summary.content}</pre></div>) : (<p className="text-center text-muted-foreground p-8">Générez un résumé pour le voir ici.</p>)}</div></ScrollArea>
+        </TabsContent>
+        <TabsContent value="translation" className="flex-1 overflow-y-auto m-0">
+          <ScrollArea className="h-full"><div className="p-6 prose prose-sm max-w-none">{selectedFile.translation ? (<div><h3>Traduction ({selectedFile.translation.lang})</h3><pre className="whitespace-pre-wrap text-sm leading-relaxed font-sans bg-secondary/20 p-4 rounded-lg">{selectedFile.translation.content}</pre></div>) : (<p className="text-center text-muted-foreground p-8">Générez une traduction pour la voir ici.</p>)}</div></ScrollArea>
+        </TabsContent>
+        <TabsContent value="chat" className="flex-1 m-0 h-full">
           <ChatView messages={chatMessages} isLoading={chatLoading} onSendMessage={onSendMessage} />
-        ) : (
-          <ScrollArea className="h-full">
-            <div className="p-6 prose prose-sm max-w-none">
-              {rightPanelView === 'analysis' && selectedFile.analysis && (<div><h3>Analyse du document</h3><pre className="whitespace-pre-wrap text-sm leading-relaxed font-sans bg-secondary/20 p-4 rounded-lg">{selectedFile.analysis}</pre></div>)}
-              {rightPanelView === 'summary' && selectedFile.summary && (<div><h3>Résumé ({selectedFile.summary.type})</h3><pre className="whitespace-pre-wrap text-sm leading-relaxed font-sans bg-secondary/20 p-4 rounded-lg">{selectedFile.summary.content}</pre></div>)}
-              {rightPanelView === 'translation' && selectedFile.translation && (<div><h3>Traduction ({selectedFile.translation.lang})</h3><pre className="whitespace-pre-wrap text-sm leading-relaxed font-sans bg-secondary/20 p-4 rounded-lg">{selectedFile.translation.content}</pre></div>)}
-            </div>
-          </ScrollArea>
-        )}
-      </div>
+        </TabsContent>
+      </Tabs>
+
       <Dialog open={showSummaryDialog} onOpenChange={setShowSummaryDialog}>
         <DialogContent>
           <DialogHeader><DialogTitle>Options de résumé</DialogTitle></DialogHeader>
-          <div className="space-y-4">
-            <div><label>Type de résumé</label><Select value={summaryOptions.type} onValueChange={(v) => setSummaryOptions(o => ({...o, type: v}))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="long">Long</SelectItem><SelectItem value="short">Court</SelectItem></SelectContent></Select></div>
-            <div><label>Style</label><Select value={summaryOptions.style} onValueChange={(v) => setSummaryOptions(o => ({...o, style: v}))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="simple">Simple</SelectItem><SelectItem value="academic">Académique</SelectItem></SelectContent></Select></div>
-            <Button onClick={handleSummarize}>Générer le résumé</Button>
+          <div className="space-y-4 py-4">
+            <div><label className="text-sm font-medium">Type de résumé</label><Select value={summaryOptions.type} onValueChange={(v) => setSummaryOptions(o => ({...o, type: v}))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="long">Long et détaillé</SelectItem><SelectItem value="short">Court (contraction)</SelectItem></SelectContent></Select></div>
+            <div><label className="text-sm font-medium">Style</label><Select value={summaryOptions.style} onValueChange={(v) => setSummaryOptions(o => ({...o, style: v}))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="simple">Simple</SelectItem><SelectItem value="academic">Académique</SelectItem></SelectContent></Select></div>
+            <Button onClick={handleSummarize} className="w-full">Générer le résumé</Button>
           </div>
         </DialogContent>
       </Dialog>
       <Dialog open={showTranslateDialog} onOpenChange={setShowTranslateDialog}>
         <DialogContent>
           <DialogHeader><DialogTitle>Options de traduction</DialogTitle></DialogHeader>
-          <div className="space-y-4">
-            <div><label>Traduire en</label><Select value={translateLang} onValueChange={setTranslateLang}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="en">Anglais</SelectItem><SelectItem value="es">Espagnol</SelectItem><SelectItem value="de">Allemand</SelectItem><SelectItem value="fr">Français</SelectItem></SelectContent></Select></div>
-            <Button onClick={handleTranslate}>Traduire le document</Button>
+          <div className="space-y-4 py-4">
+            <div><label className="text-sm font-medium">Traduire en</label><Select value={translateLang} onValueChange={setTranslateLang}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="en">Anglais</SelectItem><SelectItem value="es">Espagnol</SelectItem><SelectItem value="de">Allemand</SelectItem><SelectItem value="fr">Français</SelectItem></SelectContent></Select></div>
+            <Button onClick={handleTranslate} className="w-full">Traduire le document</Button>
           </div>
         </DialogContent>
       </Dialog>

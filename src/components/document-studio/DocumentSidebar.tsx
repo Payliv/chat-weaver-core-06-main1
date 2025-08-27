@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -19,6 +19,11 @@ interface DocumentSidebarProps {
 
 export const DocumentSidebar = ({ files, selectedFile, onSelectFile, onFileUpload, onDeleteFile, onDownloadFile, isProcessing }: DocumentSidebarProps) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
 
   const getFileIcon = (type: string) => {
     if (type.includes('pdf')) return '📄';
@@ -34,13 +39,11 @@ export const DocumentSidebar = ({ files, selectedFile, onSelectFile, onFileUploa
   return (
     <div className="w-full md:w-80 border-r md:border-b-0 border-b bg-card flex-col">
       <div className="p-4 border-b">
-        <label className="block">
-          <input type="file" accept=".pdf,.docx,.txt" onChange={onFileUpload} className="hidden" />
-          <Button className="w-full" variant="default" disabled={isProcessing}>
-            <Plus className="w-4 h-4 mr-2" />
-            {isProcessing ? 'Traitement...' : 'Ajouter un document'}
-          </Button>
-        </label>
+        <input ref={fileInputRef} type="file" accept=".pdf,.docx,.txt" onChange={onFileUpload} className="hidden" />
+        <Button className="w-full" variant="default" disabled={isProcessing} onClick={handleUploadClick}>
+          <Plus className="w-4 h-4 mr-2" />
+          {isProcessing ? 'Traitement...' : 'Ajouter un document'}
+        </Button>
       </div>
       <div className="p-4 border-b">
         <div className="relative">
