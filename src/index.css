@@ -1,0 +1,241 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Chatelix Design System - Plateforme de Chat Multi-API
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    /* Light modern theme (default) */
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+
+    /* Primary brand colors - Blue-violet gradient */
+    --primary: 233 84% 60%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 250 84% 75%;
+
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+
+    --accent: 233 84% 60%;
+    --accent-foreground: 0 0% 100%;
+
+    /* API-specific colors */
+    --openai: 157 93% 40%;
+    --claude: 33 100% 52%;
+    --gemini: 220 91% 50%;
+    --perplexity: 280 100% 60%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 233 84% 60%;
+
+    /* Custom design tokens */
+    --gradient-primary: linear-gradient(135deg, hsl(233 84% 60%), hsl(250 84% 75%));
+    --gradient-secondary: linear-gradient(135deg, hsl(240 4.8% 95.9%), hsl(240 4.8% 92%));
+    --shadow-elegant: 0 10px 30px -10px hsl(233 84% 60% / 0.25);
+    --shadow-glow: 0 0 40px hsl(233 84% 60% / 0.2);
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* Chat specific */
+    --message-user: 233 84% 60%;
+    --message-assistant: 240 4.8% 95.9%;
+    --message-system: 157 93% 40%;
+
+    --radius: 0.5rem;
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    /* Dark modern theme */
+    --background: 223 39% 7%;
+    --foreground: 210 20% 95%;
+
+    --card: 223 31% 9%;
+    --card-foreground: 210 20% 95%;
+
+    --popover: 223 31% 9%;
+    --popover-foreground: 210 20% 95%;
+
+    /* Primary brand colors - Blue-violet gradient */
+    --primary: 233 84% 67%;
+    --primary-foreground: 223 39% 7%;
+    --primary-glow: 250 84% 75%;
+
+    --secondary: 223 31% 15%;
+    --secondary-foreground: 210 20% 90%;
+
+    --muted: 223 31% 12%;
+    --muted-foreground: 210 10% 60%;
+
+    --accent: 233 84% 67%;
+    --accent-foreground: 223 39% 7%;
+
+    /* API-specific colors */
+    --openai: 157 93% 47%;
+    --claude: 33 100% 52%;
+    --gemini: 220 91% 66%;
+    --perplexity: 280 100% 70%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 223 31% 15%;
+    --input: 223 31% 12%;
+    --ring: 233 84% 67%;
+
+    /* Custom design tokens */
+    --gradient-primary: linear-gradient(135deg, hsl(233 84% 67%), hsl(250 84% 75%));
+    --gradient-secondary: linear-gradient(135deg, hsl(223 31% 12%), hsl(223 31% 15%));
+    --shadow-elegant: 0 10px 30px -10px hsl(233 84% 67% / 0.3);
+    --shadow-glow: 0 0 40px hsl(233 84% 67% / 0.2);
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* Chat specific */
+    --message-user: 233 84% 67%;
+    --message-assistant: 223 31% 15%;
+    --message-system: 157 93% 47%;
+
+    --radius: 0.5rem;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Mobile optimizations */
+.keyboard-open {
+  padding-bottom: 0 !important;
+}
+
+/* Touch targets for mobile */
+@media (hover: none) and (pointer: coarse) {
+  button, [role="button"], .cursor-pointer {
+    min-height: 44px;
+    min-width: 44px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  /* Improve scrolling on mobile */
+  * {
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Mobile sidebar optimizations */
+  .sidebar-mobile {
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+  }
+  
+  .sidebar-mobile.open {
+    transform: translateX(0);
+  }
+}
+
+/* Safe area handling for mobile */
+@supports (padding: max(0px)) {
+  .safe-area-inset-top {
+    padding-top: max(1rem, env(safe-area-inset-top));
+  }
+  
+  .safe-area-inset-bottom {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+}
+
+/* Model selector mobile optimizations */
+@media (max-width: 640px) {
+  .model-selector-mobile {
+    padding: 0.75rem;
+  }
+  
+  .model-selector-mobile .select-trigger {
+    height: 2rem;
+    font-size: 0.875rem;
+  }
+  
+  .model-selector-mobile .badge {
+    font-size: 0.75rem;
+    padding: 0.125rem 0.375rem;
+  }
+}
+
+/* Conversation history mobile optimizations */
+.conversation-card {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.conversation-card:hover {
+  transform: translateY(-1px);
+}
+
+.conversation-card.active {
+  box-shadow: 0 4px 12px -2px rgba(var(--primary), 0.15);
+}
+
+/* Mobile conversation animations */
+@media (max-width: 768px) {
+  .conversation-card {
+    transform: none !important;
+  }
+  
+  .conversation-card:active {
+    transform: scale(0.98);
+  }
+}
+
+/* Custom animations */
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
