@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "lib": ["deno.ns", "dom", "esnext"],
+    "lib": ["deno.ns", "esnext"],
     "module": "esnext",
     "moduleResolution": "bundler"
   }
