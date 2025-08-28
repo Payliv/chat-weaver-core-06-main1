@@ -6,11 +6,15 @@ import mammoth from 'mammoth';
 import * as pdfjs from 'pdfjs-dist';
 import { DocumentGeneratorService } from '@/services/documentGeneratorService';
 
-// Set up PDF.js worker from a reliable CDN, using a fixed version
-pdfjs.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.js";
+// Set up PDF.js worker to be loaded locally from node_modules
+// This ensures reliability and avoids external CDN issues.
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.min.js',
+  import.meta.url,
+).toString();
 
 console.log('PDF.js version detected:', pdfjs.version);
-console.log('PDF.js workerSrc configured to fixed CDN:', pdfjs.GlobalWorkerOptions.workerSrc);
+console.log('PDF.js workerSrc configured to local path:', pdfjs.GlobalWorkerOptions.workerSrc);
 
 export const useDocumentManager = () => {
   const { toast } = useToast();
