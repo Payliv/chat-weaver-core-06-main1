@@ -3,6 +3,5 @@
     "lib": ["deno.ns", "dom", "esnext"],
     "module": "esnext",
     "moduleResolution": "bundler"
-  },
-  "include": ["**/*.ts"]
+  }
 }
