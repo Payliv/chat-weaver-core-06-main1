@@ -2,7 +2,11 @@ import { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import type { DocumentFile, ChatMessage } from '@/components/document-studio/types';
-import { DocumentGeneratorService } from '@/services/documentGeneratorService';
+import mammoth from 'mammoth';
+import * as pdfjs from 'pdfjs-dist';
+
+// Set up PDF.js worker from a reliable CDN
+pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
 export const useDocumentManager = () => {
   const { toast } = useToast();
@@ -34,7 +38,7 @@ export const useDocumentManager = () => {
       }));
       setFiles(mappedFiles);
 
-      if (mappedFiles.length > 0 && !selectedFile) {
+      if (mappedFiles.length > 0) {
         await selectFile(mappedFiles[0]);
       }
     } catch (error) {
@@ -42,21 +46,13 @@ export const useDocumentManager = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [selectedFile]);
+  }, []);
 
   useEffect(() => {
     loadFiles();
   }, [loadFiles]);
 
-  const selectFile = async (file: DocumentFile | null) => {
-    if (!file) {
-      setSelectedFile(null);
-      setChatMessages([]);
-      return;
-    }
-    
-    if (file.id === selectedFile?.id) return;
-
+  const selectFile = async (file: DocumentFile) => {
     setSelectedFile(file);
     setChatMessages([{
       id: crypto.randomUUID(),
@@ -89,23 +85,42 @@ export const useDocumentManager = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Utilisateur non authentifié");
 
+      // 1. Extract text on client-side
+      let extractedText = '';
+      const arrayBuffer = await file.arrayBuffer();
+
+      if (file.type === 'application/pdf') {
+        const pdf = await pdfjs.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const content = await page.getTextContent();
+          extractedText += content.items.map(item => ('str' in item ? item.str : '')).join(' ');
+        }
+      } else if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+        const result = await mammoth.extractRawText({ arrayBuffer });
+        extractedText = result.value;
+      } else if (file.type === 'text/plain') {
+        extractedText = new TextDecoder().decode(arrayBuffer);
+      } else {
+        toast({
+          title: "Format non supporté",
+          description: "L'extraction de texte n'est pas supportée pour ce type de fichier. Le fichier sera téléversé sans contenu textuel.",
+        });
+      }
+
+      if (!extractedText.trim() && file.type.startsWith('application/')) {
+        toast({
+          title: "Avertissement",
+          description: "Aucun texte n'a pu être extrait. Le document est peut-être basé sur des images ou protégé.",
+        });
+      }
+
+      // 2. Upload original file to storage
       const filePath = `${user.id}/${Date.now()}-${file.name}`;
       const { error: uploadError } = await supabase.storage.from('documents').upload(filePath, file);
       if (uploadError) throw uploadError;
 
-      const reader = new FileReader();
-      const fileContentPromise = new Promise<string>((resolve, reject) => {
-        reader.onload = () => resolve((reader.result as string).split(',')[1]);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-      const base64Content = await fileContentPromise;
-
-      const { data: analysisData, error: analysisError } = await supabase.functions.invoke('process-document', {
-        body: { fileBase64: base64Content, mimeType: file.type }
-      });
-      if (analysisError) throw analysisError;
-
+      // 3. Save metadata and extracted text to database
       const { data: dbData, error: dbError } = await supabase
         .from('documents')
         .insert({
@@ -114,8 +129,8 @@ export const useDocumentManager = () => {
           file_type: file.type,
           file_size: file.size,
           storage_path: filePath,
-          extracted_text: analysisData.extractedText,
-          preview_text: analysisData.extractedText.substring(0, 200)
+          extracted_text: extractedText.trim() || null,
+          preview_text: (extractedText.trim() || '').substring(0, 200)
         })
         .select()
         .single();
