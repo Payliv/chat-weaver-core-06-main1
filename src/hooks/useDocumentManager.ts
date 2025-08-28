@@ -6,9 +6,11 @@ import mammoth from 'mammoth';
 import * as pdfjs from 'pdfjs-dist';
 import { DocumentGeneratorService } from '@/services/documentGeneratorService';
 
-// Set up PDF.js worker from a reliable CDN
-// Explicitly use the installed version to avoid discrepancies
-pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.worker.min.js`;
+// Set up PDF.js worker from a reliable CDN, using the installed version dynamically
+pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+
+console.log('PDF.js version detected:', pdfjs.version);
+console.log('PDF.js workerSrc configured:', pdfjs.GlobalWorkerOptions.workerSrc);
 
 export const useDocumentManager = () => {
   const { toast } = useToast();
@@ -63,6 +65,7 @@ export const useDocumentManager = () => {
       timestamp: new Date().toISOString()
     }]);
     
+    // If content_base64 is not already present, try to download it for visual preview
     if (!file.content_base64) {
       try {
         const { data, error } = await supabase.storage.from('documents').download(file.storage_path);
@@ -76,7 +79,7 @@ export const useDocumentManager = () => {
         };
         reader.readAsDataURL(data);
       } catch (error) {
-        toast({ title: "Erreur", description: "Impossible de charger l'aperçu du fichier.", variant: "destructive" });
+        toast({ title: "Erreur", description: "Impossible de charger l'aperçu visuel du fichier.", variant: "destructive" });
       }
     }
   };
