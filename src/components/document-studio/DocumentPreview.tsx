@@ -1,6 +1,6 @@
 import type { DocumentFile } from './types';
 import { Card, CardContent } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area'; // Added import for ScrollArea
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface DocumentPreviewProps {
   selectedFile: DocumentFile | null;
@@ -14,7 +14,14 @@ export const DocumentPreview = ({ selectedFile, isProcessing }: DocumentPreviewP
       <Card className="h-full">
         <CardContent className="p-4 h-full flex flex-col">
           <h2 className="font-bold mb-2">{selectedFile.name}</h2>
-          {selectedFile.content_base64 ? (
+          {/* Use public_url for PDF preview, fallback to text or base64 */}
+          {selectedFile.public_url && selectedFile.type === 'application/pdf' ? (
+            <iframe
+              src={selectedFile.public_url}
+              className="w-full flex-1 border-0"
+              title="Document Preview"
+            />
+          ) : selectedFile.content_base64 ? (
             <iframe
               src={`data:${selectedFile.type};base64,${selectedFile.content_base64}`}
               className="w-full flex-1 border-0"

@@ -39,10 +39,11 @@ export const useDocumentManager = () => {
         storage_path: doc.storage_path,
         full_text: doc.extracted_text,
         created_at: doc.created_at,
+        public_url: doc.public_url, // Include public_url from DB
       }));
       setFiles(mappedFiles);
 
-      if (mappedFiles.length > 0 && !selectedFile) { // Only auto-select if no file is already selected
+      if (mappedFiles.length > 0 && !selectedFile) {
         await selectFile(mappedFiles[0]);
       }
     } catch (error) {
@@ -50,7 +51,7 @@ export const useDocumentManager = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [selectedFile]); // Re-run if selectedFile changes to ensure it's loaded
+  }, [selectedFile]);
 
   useEffect(() => {
     loadFiles();
@@ -65,21 +66,15 @@ export const useDocumentManager = () => {
       timestamp: new Date().toISOString()
     }]);
     
-    // If content_base64 is not already present, try to download it for visual preview
-    if (!file.content_base64) {
+    // Ensure public_url is available for preview
+    if (!file.public_url) {
       try {
-        const { data, error } = await supabase.storage.from('documents').download(file.storage_path);
-        if (error) throw error;
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const base64 = (reader.result as string).split(',')[1];
-          const updatedFile = { ...file, content_base64: base64 };
-          setSelectedFile(updatedFile);
-          setFiles(prev => prev.map(f => f.id === file.id ? updatedFile : f));
-        };
-        reader.readAsDataURL(data);
+        const { data: { publicUrl } } = supabase.storage.from('documents').getPublicUrl(file.storage_path);
+        const updatedFile = { ...file, public_url: publicUrl };
+        setSelectedFile(updatedFile);
+        setFiles(prev => prev.map(f => f.id === file.id ? updatedFile : f));
       } catch (error) {
-        toast({ title: "Erreur", description: "Impossible de charger l'aperçu visuel du fichier.", variant: "destructive" });
+        toast({ title: "Erreur", description: "Impossible de générer l'URL publique du fichier.", variant: "destructive" });
       }
     }
   };
@@ -125,7 +120,10 @@ export const useDocumentManager = () => {
       const { error: uploadError } = await supabase.storage.from('documents').upload(filePath, file);
       if (uploadError) throw uploadError;
 
-      // 3. Save metadata and extracted text to database
+      // 3. Get public URL for the uploaded file
+      const { data: { publicUrl } } = supabase.storage.from('documents').getPublicUrl(filePath);
+
+      // 4. Save metadata and extracted text to database
       const { data: dbData, error: dbError } = await supabase
         .from('documents')
         .insert({
@@ -135,7 +133,8 @@ export const useDocumentManager = () => {
           file_size: file.size,
           storage_path: filePath,
           extracted_text: extractedText.trim() || null,
-          preview_text: (extractedText.trim() || '').substring(0, 200)
+          preview_text: (extractedText.trim() || '').substring(0, 200),
+          public_url: publicUrl, // Store public URL
         })
         .select()
         .single();
