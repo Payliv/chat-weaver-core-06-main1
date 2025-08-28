@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import type { DocumentFile, ChatMessage } from '@/components/document-studio/types';
+import { DocumentGeneratorService } from '@/services/documentGeneratorService';
 
 export const useDocumentManager = () => {
   const { toast } = useToast();
@@ -33,7 +34,7 @@ export const useDocumentManager = () => {
       }));
       setFiles(mappedFiles);
 
-      if (mappedFiles.length > 0) {
+      if (mappedFiles.length > 0 && !selectedFile) {
         await selectFile(mappedFiles[0]);
       }
     } catch (error) {
@@ -41,13 +42,21 @@ export const useDocumentManager = () => {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [selectedFile]);
 
   useEffect(() => {
     loadFiles();
   }, [loadFiles]);
 
-  const selectFile = async (file: DocumentFile) => {
+  const selectFile = async (file: DocumentFile | null) => {
+    if (!file) {
+      setSelectedFile(null);
+      setChatMessages([]);
+      return;
+    }
+    
+    if (file.id === selectedFile?.id) return;
+
     setSelectedFile(file);
     setChatMessages([{
       id: crypto.randomUUID(),

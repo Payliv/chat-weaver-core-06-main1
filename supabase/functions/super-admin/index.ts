@@ -86,289 +86,295 @@ serve(async (req) => {
       
       case 'promoteUser':
         console.log('Promoting user:', data);
-        result = await promoteUser(supabaseClient,<dyad-problem-report summary="188 problems">
-<problem file="src/pages/DocumentStudio.tsx" line="4" column="34" code="2307">Cannot find module '@/components/document-studio/DocumentUploader' or its corresponding type declarations.</problem>
-<problem file="src/pages/DocumentStudio.tsx" line="5" column="33" code="2307">Cannot find module '@/components/document-studio/DocumentHistory' or its corresponding type declarations.</problem>
-<problem file="src/pages/DocumentStudio.tsx" line="6" column="33" code="2307">Cannot find module '@/components/document-studio/DocumentPreview' or its corresponding type declarations.</problem>
-<problem file="src/pages/DocumentStudio.tsx" line="7" column="30" code="2307">Cannot find module '@/components/document-studio/DocumentChat' or its corresponding type declarations.</problem>
-<problem file="src/pages/DocumentStudio.tsx" line="8" column="33" code="2307">Cannot find module '@/components/document-studio/DocumentActions' or its corresponding type declarations.</problem>
-<problem file="supabase/functions/process-document/index.ts" line="2" column="23" code="2307">Cannot find module 'https://deno.land/std@0.190.0/http/server.ts' or its corresponding type declarations.</problem>
-<problem file="supabase/functions/process-document/index.ts" line="9" column="24" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/process-document/index.ts" line="1" column="23" code="2688">Cannot find type definition file for 'https://esm.sh/@supabase/functions-js@2.4.1/src/edge-runtime.d.ts'.</problem>
-<problem file="supabase/functions/check-subscription/index.ts" line="2" column="23" code="2307">Cannot find module 'https://deno.land/std@0.190.0/http/server.ts' or its corresponding type declarations.</problem>
-<problem file="supabase/functions/check-subscription/index.ts" line="4" column="30" code="2307">Cannot find module 'https://esm.sh/@supabase/supabase-js@2.45.0' or its corresponding type declarations.</problem>
-<problem file="supabase/functions/check-subscription/index.ts" line="19" column="5" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/check-subscription/index.ts" line="20" column="5" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/check-subscription/index.ts" line="25" column="5" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/check-subscription/index.ts" line="26" column="5" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/check-subscription/index.ts" line="1" column="23" code="2688">Cannot find type definition file for 'https://esm.sh/@supabase/functions-js@2.4.1/src/edge-runtime.d.ts'.</problem>
-<problem file="supabase/functions/claude-chat/index.ts" line="2" column="23" code="2307">Cannot find module 'https://deno.land/std@0.190.0/http/server.ts' or its corresponding type declarations.</problem>
-<problem file="supabase/functions/claude-chat/index.ts" line="9" column="27" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/claude-chat/index.ts" line="1" column="23" code="2688">Cannot find type definition file for 'https://esm.sh/@supabase/functions-js@2.4.1/src/edge-runtime.d.ts'.</problem>
-<problem file="supabase/functions/codestral-chat/index.ts" line="2" column="23" code="2307">Cannot find module 'https://deno.land/std@0.190.0/http/server.ts' or its corresponding type declarations.</problem>
-<problem file="supabase/functions/codestral-chat/index.ts" line="9" column="25" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/codestral-chat/index.ts" line="1" column="23" code="2688">Cannot find type definition file for 'https://esm.sh/@supabase/functions-js@2.4.1/src/edge-runtime.d.ts'.</problem>
-<problem file="supabase/functions/cleanup-stalled-generations/index.ts" line="2" column="23" code="2307">Cannot find module 'https://deno.land/std@0.190.0/http/server.ts' or its corresponding type declarations.</problem>
-<problem file="supabase/functions/cleanup-stalled-generations/index.ts" line="3" column="30" code="2307">Cannot find module 'https://esm.sh/@supabase/supabase-js@2.7.1' or its corresponding type declarations.</problem>
-<problem file="supabase/functions/cleanup-stalled-generations/index.ts" line="11" column="3" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/cleanup-stalled-generations/index.ts" line="12" column="3" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/cleanup-stalled-generations/index.ts" line="1" column="23" code="2688">Cannot find type definition file for 'https://esm.sh/@supabase/functions-js@2.4.1/src/edge-runtime.d.ts'.</problem>
-<problem file="supabase/functions/customer-portal/index.ts" line="2" column="23" code="2307">Cannot find module 'https://deno.land/std@0.190.0/http/server.ts' or its corresponding type declarations.</problem>
-<problem file="supabase/functions/customer-portal/index.ts" line="3" column="20" code="2307">Cannot find module 'https://esm.sh/stripe@14.21.0' or its corresponding type declarations.</problem>
-<problem file="supabase/functions/customer-portal/index.ts" line="4" column="30" code="2307">Cannot find module 'https://esm.sh/@supabase/supabase-js@2.45.0' or its corresponding type declarations.</problem>
-<problem file="supabase/functions/customer-portal/index.ts" line="17" column="23" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/customer-portal/index.ts" line="21" column="7" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/customer-portal/index.ts" line="22" column="7" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/customer-portal/index.ts" line="1" column="23" code="2688">Cannot find type definition file for 'https://esm.sh/@supabase/functions-js@2.4.1/src/edge-runtime.d.ts'.</problem>
-<problem file="supabase/functions/create-checkout/index.ts" line="2" column="23" code="2307">Cannot find module 'https://deno.land/std@0.190.0/http/server.ts' or its corresponding type declarations.</problem>
-<problem file="supabase/functions/create-checkout/index.ts" line="3" column="20" code="2307">Cannot find module 'https://esm.sh/stripe@14.21.0' or its corresponding type declarations.</problem>
-<problem file="supabase/functions/create-checkout/index.ts" line="4" column="30" code="2307">Cannot find module 'https://esm.sh/@supabase/supabase-js@2.45.0' or its corresponding type declarations.</problem>
-<problem file="supabase/functions/create-checkout/index.ts" line="25" column="5" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/create-checkout/index.ts" line="26" column="5" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/create-checkout/index.ts" line="30" column="5" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/create-checkout/index.ts" line="31" column="5" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/create-checkout/index.ts" line="36" column="23" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/create-checkout/index.ts" line="1" column="23" code="2688">Cannot find type definition file for 'https://esm.sh/@supabase/functions-js@2.4.1/src/edge-runtime.d.ts'.</problem>
-<problem file="supabase/functions/deepseek-chat/index.ts" line="2" column="23" code="2307">Cannot find module 'https://deno.land/std@0.190.0/http/server.ts' or its corresponding type declarations.</problem>
-<problem file="supabase/functions/deepseek-chat/index.ts" line="9" column="26" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/deepseek-chat/index.ts" line="1" column="23" code="2688">Cannot find type definition file for 'https://esm.sh/@supabase/functions-js@2.4.1/src/edge-runtime.d.ts'.</problem>
-<problem file="supabase/functions/generate-ebook/index.ts" line="2" column="23" code="2307">Cannot find module 'https://deno.land/std@0.190.0/http/server.ts' or its corresponding type declarations.</problem>
-<problem file="supabase/functions/generate-ebook/index.ts" line="3" column="30" code="2307">Cannot find module 'https://esm.sh/@supabase/supabase-js@2.7.1' or its corresponding type declarations.</problem>
-<problem file="supabase/functions/generate-ebook/index.ts" line="11" column="3" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/generate-ebook/index.ts" line="12" column="3" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/generate-ebook/index.ts" line="71" column="40" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/generate-ebook/index.ts" line="138" column="40" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/generate-ebook/index.ts" line="173" column="27" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/generate-ebook/index.ts" line="183" column="33" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/generate-ebook/index.ts" line="595" column="5" code="2304">Cannot find name 'EdgeRuntime'.</problem>
-<problem file="supabase/functions/generate-ebook/index.ts" line="1" column="23" code="2688">Cannot find type definition file for 'https://esm.sh/@supabase/functions-js@2.4.1/src/edge-runtime.d.ts'.</problem>
-<problem file="supabase/functions/gemini-chat/index.ts" line="1" column="23" code="2307">Cannot find module 'https://deno.land/std@0.190.0/http/server.ts' or its corresponding type declarations.</problem>
-<problem file="supabase/functions/gemini-chat/index.ts" line="8" column="24" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/claude-chat-stream/index.ts" line="1" column="23" code="2307">Cannot find module 'https://deno.land/std@0.190.0/http/server.ts' or its corresponding type declarations.</problem>
-<problem file="supabase/functions/claude-chat-stream/index.ts" line="21" column="36" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/dalle-image/index.ts" line="1" column="23" code="2307">Cannot find module 'https://deno.land/std@0.190.0/http/server.ts' or its corresponding type declarations.</problem>
-<problem file="supabase/functions/dalle-image/index.ts" line="29" column="36" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/google-tts/index.ts" line="1" column="23" code="2307">Cannot find module 'https://deno.land/std@0.190.0/http/server.ts' or its corresponding type declarations.</problem>
-<problem file="supabase/functions/google-tts/index.ts" line="27" column="28" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/google-stt/index.ts" line="1" column="23" code="2307">Cannot find module 'https://deno.land/std@0.190.0/http/server.ts' or its corresponding type declarations.</problem>
-<problem file="supabase/functions/google-stt/index.ts" line="17" column="28" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/get-pexels-key/index.ts" line="1" column="23" code="2307">Cannot find module 'https://deno.land/std@0.190.0/http/server.ts' or its corresponding type declarations.</problem>
-<problem file="supabase/functions/get-pexels-key/index.ts" line="17" column="26" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/image-proxy/index.ts" line="1" column="23" code="2307">Cannot find module 'https://deno.land/std@0.190.0/http/server.ts' or its corresponding type declarations.</problem>
-<problem file="supabase/functions/klingai-video/index.ts" line="1" column="23" code="2307">Cannot find module 'https://deno.land/std@0.190.0/http/server.ts' or its corresponding type declarations.</problem>
-<problem file="supabase/functions/klingai-video/index.ts" line="26" column="25" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/moneroo-init/index.ts" line="2" column="23" code="2307">Cannot find module 'https://deno.land/std@0.190.0/http/server.ts' or its corresponding type declarations.</problem>
-<problem file="supabase/functions/moneroo-init/index.ts" line="3" column="30" code="2307">Cannot find module 'https://esm.sh/@supabase/supabase-js@2.45.0' or its corresponding type declarations.</problem>
-<problem file="supabase/functions/moneroo-init/index.ts" line="19" column="5" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/moneroo-init/index.ts" line="20" column="5" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/moneroo-init/index.ts" line="42" column="24" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/moneroo-init/index.ts" line="1" column="23" code="2688">Cannot find type definition file for 'https://esm.sh/@supabase/functions-js@2.4.1/src/edge-runtime.d.ts'.</problem>
-<problem file="supabase/functions/huggingface-image/index.ts" line="2" column="23" code="2307">Cannot find module 'https://deno.land/std@0.190.0/http/server.ts' or its corresponding type declarations.</problem>
-<problem file="supabase/functions/huggingface-image/index.ts" line="3" column="29" code="2307">Cannot find module 'https://esm.sh/@huggingface/inference@2.3.2' or its corresponding type declarations.</problem>
-<problem file="supabase/functions/huggingface-image/index.ts" line="20" column="32" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/huggingface-image/index.ts" line="1" column="23" code="2688">Cannot find type definition file for 'https://esm.sh/@supabase/functions-js@2.4.1/src/edge-runtime.d.ts'.</problem>
-<problem file="supabase/functions/moneroo-minutes-verify/index.ts" line="2" column="23" code="2307">Cannot find module 'https://deno.land/std@0.190.0/http/server.ts' or its corresponding type declarations.</problem>
-<problem file="supabase/functions/moneroo-minutes-verify/index.ts" line="3" column="30" code="2307">Cannot find module 'https://esm.sh/@supabase/supabase-js@2.45.0' or its corresponding type declarations.</problem>
-<problem file="supabase/functions/moneroo-minutes-verify/index.ts" line="19" column="5" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/moneroo-minutes-verify/index.ts" line="20" column="5" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/moneroo-minutes-verify/index.ts" line="25" column="5" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/moneroo-minutes-verify/index.ts" line="26" column="5" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/moneroo-minutes-verify/index.ts" line="32" column="24" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/moneroo-minutes-verify/index.ts" line="1" column="23" code="2688">Cannot find type definition file for 'https://esm.sh/@supabase/functions-js@2.4.1/src/edge-runtime.d.ts'.</problem>
-<problem file="supabase/functions/openai-chat-stream/index.ts" line="2" column="23" code="2307">Cannot find module 'https://deno.land/std@0.190.0/http/server.ts' or its corresponding type declarations.</problem>
-<problem file="supabase/functions/openai-chat-stream/index.ts" line="9" column="24" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/openai-chat-stream/index.ts" line="1" column="23" code="2688">Cannot find type definition file for 'https://esm.sh/@supabase/functions-js@2.4.1/src/edge-runtime.d.ts'.</problem>
-<problem file="supabase/functions/moneroo-verify/index.ts" line="2" column="23" code="2307">Cannot find module 'https://deno.land/std@0.190.0/http/server.ts' or its corresponding type declarations.</problem>
-<problem file="supabase/functions/moneroo-verify/index.ts" line="3" column="30" code="2307">Cannot find module 'https://esm.sh/@supabase/supabase-js@2.45.0' or its corresponding type declarations.</problem>
-<problem file="supabase/functions/moneroo-verify/index.ts" line="19" column="5" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/moneroo-verify/index.ts" line="20" column="5" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/moneroo-verify/index.ts" line="25" column="5" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/moneroo-verify/index.ts" line="26" column="5" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/moneroo-verify/index.ts" line="32" column="24" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/moneroo-verify/index.ts" line="1" column="23" code="2688">Cannot find type definition file for 'https://esm.sh/@supabase/functions-js@2.4.1/src/edge-runtime.d.ts'.</problem>
-<problem file="supabase/functions/moneroo-minutes-init/index.ts" line="2" column="23" code="2307">Cannot find module 'https://deno.land/std@0.190.0/http/server.ts' or its corresponding type declarations.</problem>
-<problem file="supabase/functions/moneroo-minutes-init/index.ts" line="3" column="30" code="2307">Cannot find module 'https://esm.sh/@supabase/supabase-js@2.45.0' or its corresponding type declarations.</problem>
-<problem file="supabase/functions/moneroo-minutes-init/index.ts" line="19" column="5" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/moneroo-minutes-init/index.ts" line="20" column="5" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/moneroo-minutes-init/index.ts" line="26" column="24" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/moneroo-minutes-init/index.ts" line="1" column="23" code="2688">Cannot find type definition file for 'https://esm.sh/@supabase/functions-js@2.4.1/src/edge-runtime.d.ts'.</problem>
-<problem file="supabase/functions/openai-embed/index.ts" line="2" column="23" code="2307">Cannot find module 'https://deno.land/std@0.190.0/http/server.ts' or its corresponding type declarations.</problem>
-<problem file="supabase/functions/openai-embed/index.ts" line="9" column="24" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/openai-embed/index.ts" line="1" column="23" code="2688">Cannot find type definition file for 'https://esm.sh/@supabase/functions-js@2.4.1/src/edge-runtime.d.ts'.</problem>
-<problem file="supabase/functions/openai-chat/index.ts" line="2" column="23" code="2307">Cannot find module 'https://deno.land/std@0.190.0/http/server.ts' or its corresponding type declarations.</problem>
-<problem file="supabase/functions/openai-chat/index.ts" line="9" column="24" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/openai-chat/index.ts" line="1" column="23" code="2688">Cannot find type definition file for 'https://esm.sh/@supabase/functions-js@2.4.1/src/edge-runtime.d.ts'.</problem>
-<problem file="supabase/functions/deepseek-chat-stream/index.ts" line="2" column="23" code="2307">Cannot find module 'https://deno.land/std@0.190.0/http/server.ts' or its corresponding type declarations.</problem>
-<problem file="supabase/functions/deepseek-chat-stream/index.ts" line="15" column="30" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/deepseek-chat-stream/index.ts" line="1" column="23" code="2688">Cannot find type definition file for 'https://esm.sh/@supabase/functions-js@2.4.1/src/edge-runtime.d.ts'.</problem>
-<problem file="supabase/functions/openai-image/index.ts" line="2" column="23" code="2307">Cannot find module 'https://deno.land/std@0.190.0/http/server.ts' or its corresponding type declarations.</problem>
-<problem file="supabase/functions/openai-image/index.ts" line="21" column="36" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/openai-image/index.ts" line="1" column="23" code="2688">Cannot find type definition file for 'https://esm.sh/@supabase/functions-js@2.4.1/src/edge-runtime.d.ts'.</problem>
-<problem file="supabase/functions/openrouter-chat/index.ts" line="2" column="23" code="2307">Cannot find module 'https://deno.land/std@0.190.0/http/server.ts' or its corresponding type declarations.</problem>
-<problem file="supabase/functions/openrouter-chat/index.ts" line="4" column="26" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/openrouter-chat/index.ts" line="1" column="23" code="2688">Cannot find type definition file for 'https://esm.sh/@supabase/functions-js@2.4.1/src/edge-runtime.d.ts'.</problem>
-<problem file="supabase/functions/openrouter-chat-stream/index.ts" line="2" column="23" code="2307">Cannot find module 'https://deno.land/std@0.190.0/http/server.ts' or its corresponding type declarations.</problem>
-<problem file="supabase/functions/openrouter-chat-stream/index.ts" line="22" column="36" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/openrouter-chat-stream/index.ts" line="1" column="23" code="2688">Cannot find type definition file for 'https://esm.sh/@supabase/functions-js@2.4.1/src/edge-runtime.d.ts'.</problem>
-<problem file="supabase/functions/openai-image-variations/index.ts" line="2" column="23" code="2307">Cannot find module 'https://deno.land/std@0.190.0/http/server.ts' or its corresponding type declarations.</problem>
-<problem file="supabase/functions/openai-image-variations/index.ts" line="45" column="36" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/openai-image-variations/index.ts" line="1" column="23" code="2688">Cannot find type definition file for 'https://esm.sh/@supabase/functions-js@2.4.1/src/edge-runtime.d.ts'.</problem>
-<problem file="supabase/functions/openai-image-edit/index.ts" line="2" column="23" code="2307">Cannot find module 'https://deno.land/std@0.190.0/http/server.ts' or its corresponding type declarations.</problem>
-<problem file="supabase/functions/openai-image-edit/index.ts" line="45" column="36" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/openai-image-edit/index.ts" line="1" column="23" code="2688">Cannot find type definition file for 'https://esm.sh/@supabase/functions-js@2.4.1/src/edge-runtime.d.ts'.</problem>
-<problem file="supabase/functions/perplexity-chat/index.ts" line="2" column="23" code="2307">Cannot find module 'https://deno.land/std@0.190.0/http/server.ts' or its corresponding type declarations.</problem>
-<problem file="supabase/functions/perplexity-chat/index.ts" line="9" column="28" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/perplexity-chat/index.ts" line="1" column="23" code="2688">Cannot find type definition file for 'https://esm.sh/@supabase/functions-js@2.4.1/src/edge-runtime.d.ts'.</problem>
-<problem file="supabase/functions/openrouter-tts/index.ts" line="2" column="23" code="2307">Cannot find module 'https://deno.land/std@0.190.0/http/server.ts' or its corresponding type declarations.</problem>
-<problem file="supabase/functions/openrouter-tts/index.ts" line="27" column="30" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/openrouter-tts/index.ts" line="1" column="23" code="2688">Cannot find type definition file for 'https://esm.sh/@supabase/functions-js@2.4.1/src/edge-runtime.d.ts'.</problem>
-<problem file="supabase/functions/quota-check/index.ts" line="2" column="23" code="2307">Cannot find module 'https://deno.land/std@0.190.0/http/server.ts' or its corresponding type declarations.</problem>
-<problem file="supabase/functions/quota-check/index.ts" line="3" column="30" code="2307">Cannot find module 'https://esm.sh/@supabase/supabase-js@2.45.0' or its corresponding type declarations.</problem>
-<problem file="supabase/functions/quota-check/index.ts" line="18" column="5" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/quota-check/index.ts" line="19" column="5" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/quota-check/index.ts" line="24" column="5" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/quota-check/index.ts" line="25" column="5" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/quota-check/index.ts" line="1" column="23" code="2688">Cannot find type definition file for 'https://esm.sh/@supabase/functions-js@2.4.1/src/edge-runtime.d.ts'.</problem>
-<problem file="supabase/functions/team-management/index.ts" line="2" column="23" code="2307">Cannot find module 'https://deno.land/std@0.190.0/http/server.ts' or its corresponding type declarations.</problem>
-<problem file="supabase/functions/team-management/index.ts" line="3" column="30" code="2307">Cannot find module 'https://esm.sh/@supabase/supabase-js@2.45.0' or its corresponding type declarations.</problem>
-<problem file="supabase/functions/team-management/index.ts" line="32" column="37" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/team-management/index.ts" line="36" column="36" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/team-management/index.ts" line="63" column="5" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/team-management/index.ts" line="64" column="5" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/team-management/index.ts" line="69" column="5" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/team-management/index.ts" line="70" column="5" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/team-management/index.ts" line="246" column="25" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/team-management/index.ts" line="1" column="23" code="2688">Cannot find type definition file for 'https://esm.sh/@supabase/functions-js@2.4.1/src/edge-runtime.d.ts'.</problem>
-<problem file="supabase/functions/resume-ebook-generation/index.ts" line="1" column="23" code="2307">Cannot find module 'https://deno.land/std@0.190.0/http/server.ts' or its corresponding type declarations.</problem>
-<problem file="supabase/functions/resume-ebook-generation/index.ts" line="2" column="30" code="2307">Cannot find module 'https://esm.sh/@supabase/supabase-js@2.7.1' or its corresponding type declarations.</problem>
-<problem file="supabase/functions/resume-ebook-generation/index.ts" line="10" column="3" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/resume-ebook-generation/index.ts" line="11" column="3" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/text-to-voice/index.ts" line="1" column="23" code="2307">Cannot find module 'https://deno.land/std@0.190.0/http/server.ts' or its corresponding type declarations.</problem>
-<problem file="supabase/functions/text-to-voice/index.ts" line="20" column="28" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/translate-text/index.ts" line="1" column="23" code="2307">Cannot find module 'https://deno.land/std@0.190.0/http/server.ts' or its corresponding type declarations.</problem>
-<problem file="supabase/functions/translate-text/index.ts" line="35" column="26" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/veo2-video/index.ts" line="1" column="23" code="2307">Cannot find module 'https://deno.land/std@0.190.0/http/server.ts' or its corresponding type declarations.</problem>
-<problem file="supabase/functions/veo2-video/index.ts" line="8" column="24" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/vision-analyze/index.ts" line="1" column="23" code="2307">Cannot find module 'https://deno.land/std@0.190.0/http/server.ts' or its corresponding type declarations.</problem>
-<problem file="supabase/functions/vision-analyze/index.ts" line="8" column="24" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/veo3-video/index.ts" line="1" column="23" code="2307">Cannot find module 'https://deno.land/std@0.190.0/http/server.ts' or its corresponding type declarations.</problem>
-<problem file="supabase/functions/veo3-video/index.ts" line="8" column="24" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/web-search-advanced/index.ts" line="2" column="23" code="2307">Cannot find module 'https://deno.land/std@0.190.0/http/server.ts' or its corresponding type declarations.</problem>
-<problem file="supabase/functions/web-search-advanced/index.ts" line="27" column="40" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/web-search-advanced/index.ts" line="71" column="40" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/web-search-advanced/index.ts" line="108" column="40" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/web-search-advanced/index.ts" line="1" column="23" code="2688">Cannot find type definition file for 'https://esm.sh/@supabase/functions-js@2.4.1/src/edge-runtime.d.ts'.</problem>
-<problem file="supabase/functions/gemini-chat-stream/index.ts" line="2" column="23" code="2307">Cannot find module 'https://deno.land/std@0.190.0/http/server.ts' or its corresponding type declarations.</problem>
-<problem file="supabase/functions/gemini-chat-stream/index.ts" line="18" column="20" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/gemini-chat-stream/index.ts" line="18" column="54" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/gemini-chat-stream/index.ts" line="1" column="23" code="2688">Cannot find type definition file for 'https://esm.sh/@supabase/functions-js@2.4.1/src/edge-runtime.d.ts'.</problem>
-<problem file="supabase/functions/voice-to-text/index.ts" line="2" column="23" code="2307">Cannot find module 'https://deno.land/std@0.190.0/http/server.ts' or its corresponding type declarations.</problem>
-<problem file="supabase/functions/voice-to-text/index.ts" line="69" column="36" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/voice-to-text/index.ts" line="1" column="23" code="2688">Cannot find type definition file for 'https://esm.sh/@supabase/functions-js@2.4.1/src/edge-runtime.d.ts'.</problem>
-<problem file="supabase/functions/youtube-audio-extract/index.ts" line="2" column="23" code="2307">Cannot find module 'https://deno.land/std@0.190.0/http/server.ts' or its corresponding type declarations.</problem>
-<problem file="supabase/functions/youtube-audio-extract/index.ts" line="3" column="30" code="2307">Cannot find module 'https://esm.sh/@supabase/supabase-js@2.54.0' or its corresponding type declarations.</problem>
-<problem file="supabase/functions/youtube-audio-extract/index.ts" line="11" column="3" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/youtube-audio-extract/index.ts" line="12" column="3" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/youtube-audio-extract/index.ts" line="46" column="22" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/youtube-audio-extract/index.ts" line="1" column="23" code="2688">Cannot find type definition file for 'https://esm.sh/@supabase/functions-js@2.4.1/src/edge-runtime.d.ts'.</problem>
-<problem file="supabase/functions/super-admin/index.ts" line="1" column="23" code="2307">Cannot find module 'https://deno.land/std@0.190.0/http/server.ts' or its corresponding type declarations.</problem>
-<problem file="supabase/functions/super-admin/index.ts" line="2" column="30" code="2307">Cannot find module 'https://esm.sh/@supabase/supabase-js@2.54.0' or its corresponding type declarations.</problem>
-<problem file="supabase/functions/super-admin/index.ts" line="17" column="7" code="2304">Cannot find name 'Deno'.</problem>
-<problem file="supabase/functions/super-admin/index.ts" line="18" column="7" code="2304">Cannot find name 'Deno'.</problem>
-</dyad-problem-report><think>**Debugging TypeScript Errors**
+        result = await promoteUser(supabaseClient, data);
+        break;
+      
+      case 'demoteUser':
+        console.log('Demoting user:', data);
+        result = await demoteUser(supabaseClient, data);
+        break;
+      
+      default:
+        console.log('Invalid action:', action);
+        return new Response(
+          JSON.stringify({ error: 'Invalid action' }),
+          { 
+            status: 400, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+    }
 
-I've begun dissecting the TypeScript errors. Initially, I'm focusing on the `useDocumentManager.ts` file, where two glaring errors have caught my eye.  The `TS2352` issue demands immediate attention, likely a type conversion problem, while the second error requires further investigation into potential type mismatches.
+    return new Response(
+      JSON.stringify(result),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    );
 
+  } catch (error) {
+    console.error('Error:', error);
+    return new Response(
+      JSON.stringify({ error: 'Internal server error', details: error.message }),
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    );
+  }
+});
 
-**Pinpointing Root Causes**
+async function getDashboardData(supabaseClient: any) {
+  try {
+        // Get users count from auth.users with subscription info
+        const { data: authUsers, error: authError } = await supabaseClient.auth.admin.listUsers();
+        if (authError) {
+          console.error('Auth users error:', authError);
+          throw authError;
+        }
+        
+        let users = authUsers.users || [];
 
-I've isolated the key issues. The `useDocumentManager.ts` errors stem from a Supabase data/`DocumentFile` type mismatch; the Document Studio errors are due to missing components, likely deleted during a restructuring. The remaining errors are cascading, and I'll address them once these primary issues are resolved.
+    // Get subscription info for each user
+    const usersWithSubscriptions = await Promise.all(
+      users.map(async (user: any) => {
+        const { data: subscription } = await supabaseClient
+          .from('subscribers')
+          .select('subscribed, subscription_tier, subscription_end')
+          .eq('user_id', user.id)
+          .maybeSingle();
 
+        return {
+          id: user.id,
+          email: user.email,
+          created_at: user.created_at,
+          last_sign_in_at: user.last_sign_in_at,
+          subscription: subscription || null
+        };
+      })
+    );
 
-**Resolving Data Mismatches**
+    // Get subscription plans
+    const { data: plans, error: plansError } = await supabaseClient
+      .from('subscription_plans')
+      .select('*')
+      .order('created_at', { ascending: false });
 
-My focus has shifted to the `useDocumentManager.ts` file, and I'm tackling the root cause of those errors first. I've pinpointed a mismatch between Supabase data and the `DocumentFile` interface. My plan is to implement a robust property mapping solution within the data fetching process to reconcile this discrepancy. This will ensure proper data typing and eliminate those lingering TypeScript errors.
+    if (plansError) {
+      console.error('Plans error:', plansError);
+    }
 
+    // Get statistics
+    const { data: subscribers, error: subscribersError } = await supabaseClient
+      .from('subscribers')
+      .select('subscribed, minutes_balance, total_minutes_purchased');
 
-**Debugging TS Configuration**
+    if (subscribersError) {
+      console.error('Subscribers error:', subscribersError);
+    }
 
-I'm focused on resolving the remaining TypeScript errors, specifically those related to Supabase Edge Functions. After reviewing my previous fix attempt, which caused deployment errors, I've concluded the issue lies in the deployment process misinterpreting the `tsconfig.json` file. My plan is to revise the `tsconfig.json`, ensuring the Deno environment is correctly configured while preventing its unintended execution during deployment. I'll test a known working configuration.
+    const { data: conversations, error: conversationsError } = await supabaseClient
+      .from('conversations')
+      .select('id');
 
+    if (conversationsError) {
+      console.error('Conversations error:', conversationsError);
+    }
 
-**Revising TSConfig Implementation**
+    const { data: purchases, error: purchasesError } = await supabaseClient
+      .from('minute_purchases')
+      .select('amount')
+      .eq('status', 'completed');
 
-I'm revisiting the `tsconfig.json` configuration for the Supabase Edge Functions. The aim is to resolve those persistent TypeScript errors within the editor. While my earlier attempts proved problematic during deployment, I'm now implementing a new configuration. This updated approach focuses on setting up the Deno environment within the editor without influencing the deployment process.  Hopefully, this new configuration will resolve the TypeScript errors.
+    if (purchasesError) {
+      console.error('Purchases error:', purchasesError);
+    }
 
+    const stats = {
+      totalUsers: usersWithSubscriptions.length || 0,
+      totalRevenue: (purchases || []).reduce((sum: number, p: any) => sum + (p.amount || 0), 0),
+      activeSubscriptions: (subscribers || []).filter((s: any) => s.subscribed).length || 0,
+      totalConversations: (conversations || []).length || 0
+    };
 
-**Mapping Data Properties**
+    return {
+      users: usersWithSubscriptions,
+      plans: plans || [],
+      stats
+    };
 
-I'm focused on resolving the data type mismatch in `useDocumentManager.ts`. I plan to create a meticulous property mapping strategy to bridge the gap between Supabase's data structure and the `DocumentFile` interface. My goal is to prevent any TypeScript errors.
-
-
-**Refining TS Configuration**
-
-I'm focused on resolving the remaining TypeScript errors associated with Supabase Edge Functions. After reevaluating the deployment process, I've confirmed that a `tsconfig.json` at the functions root is causing issues. To bypass this, I'm trying a more robust setup, carefully placing type definitions within each function. Hopefully, this ensures the editor has the correct typings while avoiding any deployment problems.
-
-
-**Implementing Property Mapping**
-
-I'm focused on resolving the data type mismatch in `useDocumentManager.ts`. I plan to meticulously map Supabase's data structure to the `DocumentFile` interface. I'll thoroughly test the new mapping logic to ensure it's effective and prevents any TypeScript errors.
-
-
-**Rebuilding Document Studio**
-
-I'm rebuilding the Document Studio components, focusing on creating the core `useDocumentManager` hook with the crucial data mapping for `DocumentFile` and Supabase data. I'm prioritizing this and a minimal UI layout to resolve the `TS2307` errors.
-
-\n\n**Data Mapping Implementation**
-
-I'm meticulously mapping the Supabase data to the `DocumentFile` interface within `useDocumentManager`. This involves creating precise transformation functions to ensure data consistency and eliminate type errors during data retrieval and display. I'm focusing on rigorous testing to validate the mapping accuracy.
-
-
-**Implementing Data Transformations**
-
-I've completed the initial mapping for the `DocumentFile` and Supabase data in `useDocumentManager.ts`. I'm now testing the data transformations rigorously to ensure accurate data flow and prevent type errors. This is crucial for seamless data presentation.
-
-
-**Refactoring Data Flow**
-
-I'm now fully immersed in the `useDocumentManager.ts` file, and I've started the meticulous process of mapping Supabase data properties to align with the `DocumentFile` interface. I'm focusing on ensuring data consistency and type safety. I'm testing the transformation functions.
-
-
-</think>Of course. My apologies for the persistent and numerous errors. This is clearly frustrating, and I will resolve all of them now with a comprehensive fix.
-
-The root of the problem is twofold:
-
-1.  **Broken Document Studio:** The feature was left in a broken state with missing component files, causing import errors and data type mismatches.
-2.  **Incorrect Supabase Function Configuration:** My previous attempts to fix TypeScript errors in your editor were incorrect for the Supabase deployment environment, leading to a cascade of compilation and deployment failures.
-
-I will now perform a complete overhaul to fix all 188 reported issues. This involves rebuilding the "Document Studio" from scratch with a reliable architecture and applying the correct, definitive configuration to all your Supabase Edge Functions.
-
-Here are the changes:
-
-### 1. Rebuilding the Document Studio Feature
-
-First, I will create all the necessary files for a new, fully functional Document Studio.
-
-<dyad-write path="src/components/document-studio/types.ts" description="Defining the data structures for the new Document Studio feature.">
-export interface DocumentFile {
-  id: string;
-  user_id: string;
-  name: string;
-  type: string;
-  size: number;
-  storage_path: string;
-  full_text: string | null;
-  created_at: string;
-  content_base64?: string; // For preview
-  summary?: { type: string; content: string };
-  translation?: { lang: string; content: string };
+  } catch (error) {
+    console.error('Dashboard data error:', error);
+    throw error;
+  }
 }
 
-export interface ChatMessage {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-  timestamp: string;
+async function createPlan(supabaseClient: any, planData: any) {
+  const { data, error } = await supabaseClient
+    .from('subscription_plans')
+    .insert([{
+      name: planData.name,
+      description: planData.description,
+      price: planData.price,
+      features: planData.features,
+      is_active: planData.is_active
+    }])
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Create plan error:', error);
+    throw error;
+  }
+
+  return { success: true, data };
 }
 
-export type RightPanelView = 'preview' | 'summary' | 'translation' | 'actions';
+async function updatePlan(supabaseClient: any, planData: any) {
+  const { data, error } = await supabaseClient
+    .from('subscription_plans')
+    .update({
+      name: planData.name,
+      description: planData.description,
+      price: planData.price,
+      features: planData.features,
+      is_active: planData.is_active,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', planData.id)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Update plan error:', error);
+    throw error;
+  }
+
+  return { success: true, data };
+}
+
+async function deletePlan(supabaseClient: any, planId: string) {
+  const { error } = await supabaseClient
+    .from('subscription_plans')
+    .delete()
+    .eq('id', planId);
+
+  if (error) {
+    console.error('Delete plan error:', error);
+    throw error;
+  }
+
+  return { success: true };
+}
+
+async function promoteUser(supabaseClient: any, data: any) {
+  const { userId, tier, subscriptionEnd } = data;
+  
+  try {
+    console.log('Starting user promotion:', { userId, tier, subscriptionEnd });
+
+    // Get user email for the subscriber record
+    const { data: userData } = await supabaseClient.auth.admin.getUserById(userId);
+    
+    if (!userData || !userData.user) {
+      throw new Error('User not found');
+    }
+
+    const userEmail = userData.user.email;
+    console.log('Found user:', userEmail);
+
+    // Check if subscriber record exists
+    const { data: existingSubscriber, error: checkError } = await supabaseClient
+      .from('subscribers')
+      .select('id')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (checkError && checkError.code !== 'PGRST116') { // PGRST116 is "not found"
+      console.error('Check subscriber error:', checkError);
+      throw checkError;
+    }
+
+    if (existingSubscriber) {
+      console.log('Updating existing subscriber');
+      // Update existing subscriber
+      const { data, error } = await supabaseClient
+        .from('subscribers')
+        .update({
+          subscribed: true,
+          subscription_tier: tier,
+          subscription_end: subscriptionEnd,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', userId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Update subscriber error:', error);
+        throw error;
+      }
+      console.log('Successfully updated subscriber:', data);
+    } else {
+      console.log('Creating new subscriber record');
+      // Create new subscriber record
+      const { data, error } = await supabaseClient
+        .from('subscribers')
+        .insert([{
+          user_id: userId,
+          email: userEmail,
+          subscribed: true,
+          subscription_tier: tier,
+          subscription_end: subscriptionEnd,
+          minutes_balance: 1000 // Give 1000 minutes as bonus
+        }])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Create subscriber error:', error);
+        throw error;
+      }
+      console.log('Successfully created subscriber:', data);
+    }
+
+    return { success: true, message: `User promoted to ${tier}` };
+
+  } catch (error) {
+    console.error('Promote user error:', error);
+    throw error;
+  }
+}
+
+async function demoteUser(supabaseClient: any, data: any) {
+  const { userId } = data;
+  
+  try {
+    console.log('Starting user demotion:', { userId });
+
+    // Update subscriber to deactivate subscription
+    const { data: result, error } = await supabaseClient
+      .from('subscribers')
+      .update({
+        subscribed: false,
+        subscription_tier: null,
+        subscription_end: null,
+        updated_at: new Date().toISOString()
+      })
+      .eq('user_id', userId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Demote user error:', error);
+      throw error;
+    }
+
+    console.log('Successfully demoted user:', result);
+    return { success: true, message: 'User demoted to free plan' };
+
+  } catch (error) {
+    console.error('Demote user error:', error);
+    throw error;
+  }
+}
