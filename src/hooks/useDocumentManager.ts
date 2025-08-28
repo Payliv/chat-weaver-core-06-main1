@@ -6,12 +6,12 @@ import mammoth from 'mammoth';
 import * as pdfjs from 'pdfjs-dist';
 import { DocumentGeneratorService } from '@/services/documentGeneratorService';
 
+// Import the PDF.js worker as a URL using Vite's ?url suffix
+import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.js?url';
+
 // Set up PDF.js worker to be loaded locally from node_modules
 // This ensures reliability and avoids external CDN issues.
-pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.min.js',
-  import.meta.url,
-).toString();
+pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 
 console.log('PDF.js version detected:', pdfjs.version);
 console.log('PDF.js workerSrc configured to local path:', pdfjs.GlobalWorkerOptions.workerSrc);
