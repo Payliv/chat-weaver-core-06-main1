@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import type { DocumentFile, ChatMessage } from '@/components/document-studio/types';
 import mammoth from 'mammoth';
 import * as pdfjs from 'pdfjs-dist';
+import { DocumentGeneratorService } from '@/services/documentGeneratorService';
 
 // Set up PDF.js worker from a reliable CDN
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
@@ -38,7 +39,7 @@ export const useDocumentManager = () => {
       }));
       setFiles(mappedFiles);
 
-      if (mappedFiles.length > 0) {
+      if (mappedFiles.length > 0 && !selectedFile) { // Only auto-select if no file is already selected
         await selectFile(mappedFiles[0]);
       }
     } catch (error) {
@@ -46,7 +47,7 @@ export const useDocumentManager = () => {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [selectedFile]); // Re-run if selectedFile changes to ensure it's loaded
 
   useEffect(() => {
     loadFiles();
@@ -173,5 +174,138 @@ export const useDocumentManager = () => {
     }
   };
 
-  return { files, selectedFile, chatMessages, isLoading, isProcessing, chatLoading, selectFile, uploadFile, sendChatMessage };
+  const deleteFile = async (fileId: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Utilisateur non authentifié");
+
+      const { data: fileToDelete } = await supabase
+        .from('documents')
+        .select('storage_path')
+        .eq('id', fileId)
+        .single();
+
+      if (fileToDelete?.storage_path) {
+        await supabase.storage.from('documents').remove([fileToDelete.storage_path]);
+      }
+
+      const { error } = await supabase
+        .from('documents')
+        .delete()
+        .eq('id', fileId)
+        .eq('user_id', user.id);
+      if (error) throw error;
+
+      toast({ title: "Succès", description: "Document supprimé." });
+      await loadFiles();
+      if (selectedFile?.id === fileId) {
+        setSelectedFile(null);
+        setChatMessages([]);
+      }
+    } catch (error) {
+      toast({ title: "Erreur", description: "Impossible de supprimer le document.", variant: "destructive" });
+    }
+  };
+
+  const downloadFile = async (file: DocumentFile) => {
+    try {
+      const { data, error } = await supabase.storage.from('documents').download(file.storage_path);
+      if (error) throw error;
+
+      const url = URL.createObjectURL(data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = file.name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast({ title: "Succès", description: "Document téléchargé." });
+    } catch (error) {
+      toast({ title: "Erreur", description: "Impossible de télécharger le document.", variant: "destructive" });
+    }
+  };
+
+  const summarizeDocument = async (text: string) => {
+    setChatLoading(true);
+    const newMessages: ChatMessage[] = [...chatMessages, { id: crypto.randomUUID(), role: 'user', content: "Résume ce document.", timestamp: new Date().toISOString() }];
+    setChatMessages(newMessages);
+    try {
+      const { data, error } = await supabase.functions.invoke('openai-chat', {
+        body: {
+          messages: [
+            { role: 'system', content: 'Tu es un assistant expert en résumé de documents. Fournis un résumé concis et clair.' },
+            { role: 'user', content: `Résume le document suivant:\n\n${text.substring(0, 12000)}` }
+          ],
+          model: 'gpt-4o-mini'
+        }
+      });
+      if (error) throw error;
+      const assistantMessage: ChatMessage = { id: crypto.randomUUID(), role: 'assistant', content: data.generatedText, timestamp: new Date().toISOString() };
+      setChatMessages([...newMessages, assistantMessage]);
+    } catch (error) {
+      toast({ title: "Erreur de résumé IA", variant: "destructive" });
+    } finally {
+      setChatLoading(false);
+    }
+  };
+
+  const translateDocument = async (text: string, targetLang: string): Promise<string | null> => {
+    setChatLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('translate-text', {
+        body: { text, targetLang }
+      });
+      if (error) throw error;
+      const translatedText = data.translatedText;
+      const assistantMessage: ChatMessage = { id: crypto.randomUUID(), role: 'assistant', content: `Le document a été traduit en ${targetLang.toUpperCase()}:\n\n${translatedText.substring(0, 2000)}...`, timestamp: new Date().toISOString() };
+      setChatMessages(prev => [...prev, assistantMessage]);
+      return translatedText;
+    } catch (error) {
+      toast({ title: "Erreur de traduction IA", variant: "destructive" });
+      return null;
+    } finally {
+      setChatLoading(false);
+    }
+  };
+
+  const convertDocument = async (file: DocumentFile, targetFormat: 'pdf' | 'docx' | 'txt'): Promise<string | null> => {
+    setChatLoading(true);
+    try {
+      if (!file.full_text) {
+        toast({ title: "Erreur", description: "Impossible de convertir un document sans texte extrait.", variant: "destructive" });
+        return null;
+      }
+      const dataUri = await DocumentGeneratorService.generateDocument({
+        content: file.full_text,
+        type: targetFormat,
+        enhanceWithAI: false // No AI enhancement for simple conversion
+      });
+      const assistantMessage: ChatMessage = { id: crypto.randomUUID(), role: 'assistant', content: `Le document a été converti en ${targetFormat.toUpperCase()}. Vous pouvez le télécharger.`, timestamp: new Date().toISOString() };
+      setChatMessages(prev => [...prev, assistantMessage]);
+      return dataUri;
+    } catch (error) {
+      toast({ title: "Erreur de conversion", description: "Impossible de convertir le document.", variant: "destructive" });
+      return null;
+    } finally {
+      setChatLoading(false);
+    }
+  };
+
+  return {
+    files,
+    selectedFile,
+    chatMessages,
+    isLoading,
+    isProcessing,
+    chatLoading,
+    selectFile,
+    uploadFile,
+    sendChatMessage,
+    deleteFile,
+    downloadFile,
+    summarizeDocument,
+    translateDocument,
+    convertDocument,
+  };
 };

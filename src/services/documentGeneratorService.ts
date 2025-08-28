@@ -6,7 +6,7 @@ import { OpenRouterService } from './openRouterService';
 
 export interface DocumentGenerationOptions {
   content: string;
-  type: 'pdf' | 'docx' | 'pptx' | 'markdown' | 'html' | 'xlsx';
+  type: 'pdf' | 'docx' | 'pptx' | 'markdown' | 'html' | 'xlsx' | 'txt'; // Added 'txt'
   template?: 'report' | 'presentation' | 'letter' | 'resume' | 'contract';
   enhanceWithAI?: boolean;
   model?: string; // OpenRouter model pour amélioration IA
@@ -14,7 +14,7 @@ export interface DocumentGenerationOptions {
 
 /**
  * Service de génération de documents avancé avec OpenRouter
- * Support PDF, DOCX, PPTX, Markdown, HTML, Excel
+ * Support PDF, DOCX, PPTX, Markdown, HTML, Excel, TXT
  */
 export class DocumentGeneratorService {
 
@@ -45,6 +45,8 @@ export class DocumentGeneratorService {
         return await this.generateHTML(content, template);
       case 'xlsx':
         return await this.generateExcel(content);
+      case 'txt': // New case for TXT
+        return await this.generateTXT(content);
       default:
         throw new Error(`Format non supporté: ${type}`);
     }
@@ -92,7 +94,8 @@ export class DocumentGeneratorService {
       pptx: 'Structure as presentation slides with concise, impactful content.',
       markdown: 'Format using proper Markdown syntax with headers, lists, and emphasis.',
       html: 'Create semantic HTML with proper tags and structure.',
-      xlsx: 'Structure as spreadsheet data with clear columns and rows.'
+      xlsx: 'Structure as spreadsheet data with clear columns and rows.',
+      txt: 'Format as plain text, ensuring readability and clear paragraph breaks.'
     };
 
     let enhancedPrompt = basePrompt;
@@ -363,6 +366,14 @@ export class DocumentGeneratorService {
     
     const base64 = btoa(unescape(encodeURIComponent(csv)));
     return `data:application/vnd.ms-excel;base64,${base64}`;
+  }
+
+  /**
+   * Génère un fichier texte brut
+   */
+  private static async generateTXT(content: string): Promise<string> {
+    const base64 = btoa(unescape(encodeURIComponent(content)));
+    return `data:text/plain;base64,${base64}`;
   }
 
   // Méthodes utilitaires

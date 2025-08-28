@@ -21,6 +21,11 @@ export default function DocumentStudio() {
     selectFile,
     uploadFile,
     sendChatMessage,
+    deleteFile,
+    downloadFile,
+    summarizeDocument,
+    translateDocument,
+    convertDocument,
   } = useDocumentManager();
 
   return (
@@ -51,8 +56,8 @@ export default function DocumentStudio() {
             files={files}
             selectedFile={selectedFile}
             onSelectFile={selectFile}
-            onDeleteFile={() => {}}
-            onDownloadFile={() => {}}
+            onDeleteFile={deleteFile}
+            onDownloadFile={downloadFile}
             loading={isLoading}
           />
         </div>
@@ -62,17 +67,38 @@ export default function DocumentStudio() {
           <DocumentPreview
             selectedFile={selectedFile}
             isProcessing={isProcessing}
-            onDownloadFile={() => {}}
+            onDownloadFile={downloadFile}
           />
         </div>
 
         {/* Right Sidebar */}
         <div className="w-full md:w-96 border-l md:border-t-0 border-t bg-card flex flex-col">
-          <DocumentChat
-            messages={chatMessages}
-            isLoading={chatLoading}
-            onSendMessage={sendChatMessage}
-          />
+          <Tabs defaultValue="chat" className="flex-1 flex flex-col">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="chat">
+                <MessageSquare className="w-4 h-4 mr-2" /> Chat
+              </TabsTrigger>
+              <TabsTrigger value="actions">
+                <Wand2 className="w-4 h-4 mr-2" /> Actions IA
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="chat" className="flex-1 flex flex-col">
+              <DocumentChat
+                messages={chatMessages}
+                isLoading={chatLoading}
+                onSendMessage={sendChatMessage}
+              />
+            </TabsContent>
+            <TabsContent value="actions" className="flex-1 flex flex-col">
+              <DocumentActions
+                selectedFile={selectedFile}
+                onSummarize={summarizeDocument}
+                onTranslate={translateDocument}
+                onConvert={convertDocument}
+                onSendMessage={sendChatMessage}
+              />
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </div>
