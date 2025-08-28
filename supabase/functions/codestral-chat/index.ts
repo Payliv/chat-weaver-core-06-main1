@@ -1,3 +1,4 @@
+/// <reference lib="deno.ns" />
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 
 const corsHeaders = {
@@ -44,7 +45,7 @@ serve(async (req) => {
     const response = await fetch("https://api.mistral.ai/v1/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${MISTRAL_API_KEY}`,
+        "Authorization": `Bearer ${MISTReno.env.get('MISTRAL_API_KEY')}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify(payload),

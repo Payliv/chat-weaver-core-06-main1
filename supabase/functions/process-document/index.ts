@@ -1,4 +1,4 @@
-/// <reference types="https://esm.sh/@supabase/functions-js@2.4.1/src/edge-runtime.d.ts" />
+/// <reference lib="deno.ns" />
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 
 const corsHeaders = {
@@ -24,43 +24,58 @@ serve(async (req) => {
       throw new Error('Missing fileBase64 or mimeType');
     }
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: "gpt-4o",
-        messages: [
-          {
-            role: "user",
-            content: [
-              { 
-                type: "text", 
-                text: prompt || "Extrait tout le texte de ce document. Réponds uniquement avec le texte brut, sans aucune introduction ou conclusion." 
-              },
-              { 
-                type: "image_url", 
-                image_url: { 
-                  url: `data:${mimeType};base64,${fileBase64}` 
-                } 
-              }
-            ]
-          }
-        ],
-        max_tokens: 4000
-      })
-    });
+    // For PDF and DOCX, client-side extraction is now used.
+    // This function will primarily handle image-based documents or further AI analysis.
+    // If the mimeType is PDF or DOCX, we assume text is already extracted client-side.
+    // If it's an image, we use OpenAI Vision.
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('OpenAI Vision API error:', errorText);
-      throw new Error(`OpenAI Vision API error: ${errorText}`);
+    let extractedText = '';
+
+    if (mimeType.startsWith('image/')) {
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${OPENAI_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: "gpt-4o",
+          messages: [
+            { 
+              role: "user", 
+              content: [
+                { 
+                  type: "text", 
+                  text: prompt || "Extrait tout le texte de ce document. Réponds uniquement avec le texte brut, sans aucune introduction ou conclusion." 
+                },
+                { 
+                  type: "image_url", 
+                  image_url: { 
+                    url: `data:${mimeType};base64,${fileBase64}` 
+                  } 
+                }
+              ]
+            }
+          ],
+          max_tokens: 4000
+        })
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('OpenAI Vision API error:', errorText);
+        throw new Error(`OpenAI Vision API error: ${errorText}`);
+      }
+
+      const data = await response.json();
+      extractedText = data.choices?.[0]?.message?.content || '';
+    } else {
+      // For PDF/DOCX/TXT, assume text is already extracted client-side.
+      // If this function is called for these types, it's likely for further AI processing
+      // based on the already extracted text, not for re-extraction.
+      // For now, we'll return an empty string or a placeholder.
+      extractedText = "Text extraction handled client-side.";
     }
-
-    const data = await response.json();
-    const extractedText = data.choices?.[0]?.message?.content || '';
 
     return new Response(
       JSON.stringify({ extractedText }), 
