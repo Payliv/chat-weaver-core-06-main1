@@ -91,8 +91,7 @@ const sendInvitationEmail = async (email: string, teamName: string, inviterName:
 // --- Action Handlers ---
 
 const handleCreateTeam = async (supabaseService: SupabaseClient, user: User, subInfo: any, body: any) => {
-  if (subInfo.teamLimit <= 1) throw new Error("Votre plan ne permet pas de créer des équipes.");
-  const { data: existingTeams } = await supabaseService.from('teams').select('id').eq('owner_id', user.id);
+  const { data: existingTeams } = await supabaseService.from('teams').select('id', { count: 'exact' }).eq('owner_id', user.id);
   if ((existingTeams?.length || 0) >= subInfo.maxTeams) throw new Error(`Limite d'équipes atteinte (${subInfo.maxTeams}).`);
 
   const { data: team, error } = await supabaseService.from('teams').insert({ name: body.teamName, owner_id: user.id }).select().single();
