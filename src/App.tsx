@@ -21,7 +21,8 @@ import TTSStudio from "./pages/TTSStudio";
 import SpeechToText from "./pages/SpeechToText";
 import CodeStudio from "./pages/CodeStudio";
 import ModernCodeStudio from "./components/modern-code-studio/ModernCodeStudio";
-import DocumentStudio from "./pages/DocumentStudio"; // Import the new DocumentStudio
+import DocumentStudio from "./pages/DocumentStudio";
+import SocialMediaStudio from "./pages/SocialMediaStudio"; // Import the new page
 
 const App = () => (
   <TooltipProvider>
@@ -44,7 +45,8 @@ const App = () => (
         <Route path="/tts-studio" element={<TTSStudio />} />
         <Route path="/code-studio" element={<ModernCodeStudio />} />
         <Route path="/code-studio-legacy" element={<CodeStudio />} />
-        <Route path="/documents" element={<DocumentStudio />} /> {/* Use the new DocumentStudio */}
+        <Route path="/documents" element={<DocumentStudio />} />
+        <Route path="/social-media-studio" element={<SocialMediaStudio />} /> {/* Add the new route */}
         <Route path="/billing" element={<Billing />} />
         <Route path="/super-admin" element={<SuperAdminDashboard />} />
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
