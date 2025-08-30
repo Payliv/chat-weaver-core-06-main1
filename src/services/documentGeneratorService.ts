@@ -474,7 +474,7 @@ export class DocumentGeneratorService {
   static async generateSimplePDF(text: string): Promise<string> {
     const pdfDoc = await PDFDocument.create();
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-    const page = pdfDoc.addPage();
+    let page = pdfDoc.addPage();
     const { width, height } = page.getSize();
     const fontSize = 12;
     const margin = 50;
@@ -485,7 +485,7 @@ export class DocumentGeneratorService {
     let y = height - margin;
     for (const line of lines) {
       if (y < margin) {
-        page.addPage();
+        page = pdfDoc.addPage();
         y = height - margin;
       }
       page.drawText(line, { x: margin, y, font, size: fontSize });
