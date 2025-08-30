@@ -6,7 +6,6 @@ import { ModelStatusIndicator } from "./ModelStatusIndicator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { MessageSquare } from "lucide-react";
-import { ModelRouterService } from '@/services/modelRecommendationService';
 import { PromptEngineerService } from '@/services/promptEngineerService';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -14,7 +13,8 @@ import { ImageService } from "@/services/imageService";
 import { StreamingService } from "@/services/streamingService";
 import { StreamingMessage } from "./StreamingMessage";
 import { AppGeneratorService } from "@/services/appGeneratorService";
-import { useNavigate } from "react-router-dom"; // Import useNavigate
+import { useNavigate } from "react-router-dom";
+import { ModelRouterService } from '@/services/modelRouterService'; // Corrected import path
 
 interface Message {
   id: string;
@@ -74,7 +74,7 @@ export const ChatArea = ({ selectedModel, systemPrompt, safeMode, isLandingMode 
   const { toast } = useToast();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const navigate = useNavigate(); // Initialize useNavigate
+  const navigate = useNavigate();
 
   // State for streaming messages
   const [streamingMessageContent, setStreamingMessageContent] = useState('');
@@ -146,7 +146,7 @@ export const ChatArea = ({ selectedModel, systemPrompt, safeMode, isLandingMode 
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messages, isLoading, streamingMessageContent]); // Added streamingMessageContent to dependencies
+  }, [messages, isLoading, streamingMessageContent]);
 
   const handleSendMessage = async (content: string) => {
     const userMessage: Message = {
@@ -158,8 +158,8 @@ export const ChatArea = ({ selectedModel, systemPrompt, safeMode, isLandingMode 
 
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
-    setIsAssistantStreaming(true); // Start streaming indicator
-    setStreamingMessageContent(''); // Clear previous streaming content
+    setIsAssistantStreaming(true);
+    setStreamingMessageContent('');
 
 
     try {
@@ -168,11 +168,10 @@ export const ChatArea = ({ selectedModel, systemPrompt, safeMode, isLandingMode 
       if (!convoId) {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
-          // En mode landing, déclencher le popup d'auth au lieu d'échouer
           if (isLandingMode && onAuthRequired) {
-            setMessages(prev => prev.slice(0, -1)); // Retirer le message utilisateur ajouté
-            setIsLoading(false); // Réinitialiser le loading
-            setIsAssistantStreaming(false); // Stop streaming indicator
+            setMessages(prev => prev.slice(0, -1));
+            setIsLoading(false);
+            setIsAssistantStreaming(false);
             onAuthRequired();
             return;
           }
@@ -251,14 +250,11 @@ export const ChatArea = ({ selectedModel, systemPrompt, safeMode, isLandingMode 
 
       // Si upload (data URL), gérer image/PDF
       if (typeof content === 'string' && content.startsWith('data:')) {
-        // Fichier attaché: on attend une instruction utilisateur avant d'analyser
         setIsLoading(false);
         setIsAssistantStreaming(false);
         return;
       }
 
-      // Déclenchement prioritaire: génération d'image si le message le demande
-      // Utilise automatiquement le meilleur provider disponible (Runware si configuré, sinon DALL-E)
       const isUpload = typeof content === 'string' && (content.startsWith('data:') || content.startsWith('http'));
       const wantsImage = !isUpload && ImageService.isImageRequest(content);
       const wantsVideo = !isUpload && isVideoRequest(content);
@@ -278,14 +274,12 @@ export const ChatArea = ({ selectedModel, systemPrompt, safeMode, isLandingMode 
             model: "app-generator"
           };
           setMessages(prev => [...prev, tempMessage]);
-          setIsAssistantStreaming(false); // Stop streaming for this specific message
+          setIsAssistantStreaming(false);
 
           const generatedApp = await AppGeneratorService.generateApp(content);
           
-          // Supprimer le message temporaire
           setMessages(prev => prev.filter(m => m.id !== tempMessage.id));
           
-          // Créer le contenu web complet
           const webContent = `${generatedApp.html}\n<style>${generatedApp.css}</style>\n<script>${generatedApp.javascript}</script>`;
           
           const appMessage: Message = {
@@ -298,7 +292,6 @@ export const ChatArea = ({ selectedModel, systemPrompt, safeMode, isLandingMode 
           
           setMessages(prev => [...prev, appMessage]);
           
-          // Sauvegarder dans la base
           await supabase.from('messages').insert({
             conversation_id: convoId,
             role: 'assistant',
@@ -311,11 +304,10 @@ export const ChatArea = ({ selectedModel, systemPrompt, safeMode, isLandingMode 
             description: "Votre application complète est prête.",
           });
           
-          return; // Arrêter le traitement pour la génération d'app
+          return;
         } catch (error) {
           console.error("❌ Erreur génération app:", error);
           
-          // Supprimer le message temporaire en cas d'erreur
           setMessages(prev => prev.filter(m => m.id.startsWith('temp-')));
           
           const errorMessage: Message = {
@@ -409,7 +401,7 @@ export const ChatArea = ({ selectedModel, systemPrompt, safeMode, isLandingMode 
       if (isDocRequest) {
         const assistantMessage: Message = {
           id: (Date.now() + 1).toString(),
-          content: `📝 J'ai détecté une demande de document (${docType}). Je vous redirige vers le Studio Documents pour une génération plus précise.`,
+          content: `📝 J'ai détecté une demande de document (${docType}). Je vous redirige vers le Générateur de Documents pour une génération plus précise.`,
           role: "assistant",
           timestamp: new Date(),
           model: selectedModel
@@ -423,7 +415,7 @@ export const ChatArea = ({ selectedModel, systemPrompt, safeMode, isLandingMode 
         });
         setIsLoading(false);
         setIsAssistantStreaming(false);
-        navigate(`/documents?prompt=${encodeURIComponent(docPrompt || content)}&type=${encodeURIComponent(docType || 'general')}`);
+        navigate(`/document-generator?prompt=${encodeURIComponent(docPrompt || content)}&type=${encodeURIComponent(docType || 'general')}`);
         return;
       }
 
@@ -572,7 +564,7 @@ export const ChatArea = ({ selectedModel, systemPrompt, safeMode, isLandingMode 
               isStreaming={isAssistantStreaming}
             />
           )}
-          {isLoading && !isAssistantStreaming && ( // Show ModelStatusIndicator only if not actively streaming
+          {isLoading && !isAssistantStreaming && (
             <ModelStatusIndicator 
               selectedModel={selectedModel}
               isLoading={isLoading}
