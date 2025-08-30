@@ -1,11 +1,12 @@
 import type { DocumentFile } from './types';
 import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { FileText, File, Loader2, FileType } from 'lucide-react'; // Added FileType icon
+import { Badge } from '@/components/ui/badge'; // Added Badge for file type
 
 interface DocumentPreviewProps {
   selectedFile: DocumentFile | null;
-  isProcessing: boolean;
-  onDownloadFile: (file: DocumentFile) => void;
+  isProcessing: boolean; // Added isProcessing prop
 }
 
 // Helper function to format text with basic markdown to HTML
@@ -33,19 +34,30 @@ export const DocumentPreview = ({ selectedFile, isProcessing }: DocumentPreviewP
     {selectedFile ? (
       <Card className="h-full">
         <CardContent className="p-4 h-full flex flex-col">
-          <h2 className="font-bold mb-2">{selectedFile.name}</h2>
-          {/* Use public_url for PDF preview, fallback to text or base64 */}
-          {selectedFile.public_url && selectedFile.type === 'application/pdf' ? (
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="font-bold text-lg">{selectedFile.name}</h2>
+            <Badge variant="secondary" className="flex items-center gap-1">
+              <FileType className="w-3 h-3" />
+              {selectedFile.type.split('/').pop()?.toUpperCase() || 'FICHIER'}
+            </Badge>
+          </div>
+          
+          {isProcessing ? (
+            <div className="flex flex-col items-center justify-center flex-1 text-muted-foreground">
+              <Loader2 className="w-8 h-8 animate-spin text-primary mb-4" />
+              <p>Traitement du document...</p>
+            </div>
+          ) : selectedFile.public_url && selectedFile.type === 'application/pdf' ? (
             <iframe
               src={selectedFile.public_url}
-              className="w-full flex-1 border-0"
+              className="w-full flex-1 border rounded-md"
               title="Document Preview"
             />
-          ) : selectedFile.content_base64 ? (
-            <iframe
-              src={`data:${selectedFile.type};base64,${selectedFile.content_base64}`}
-              className="w-full flex-1 border-0"
-              title="Document Preview"
+          ) : selectedFile.public_url && selectedFile.type.startsWith('image/') ? (
+            <img
+              src={selectedFile.public_url}
+              alt="Document Preview"
+              className="w-full h-auto max-h-full object-contain border rounded-md flex-1"
             />
           ) : selectedFile.full_text ? (
             <ScrollArea className="w-full flex-1 border rounded-md p-4 bg-muted/20 text-sm text-foreground">
@@ -53,14 +65,17 @@ export const DocumentPreview = ({ selectedFile, isProcessing }: DocumentPreviewP
             </ScrollArea>
           ) : (
             <div className="flex items-center justify-center flex-1 text-muted-foreground">
-              <p>Chargement de l'aperçu ou extraction du texte...</p>
+              <File className="w-8 h-8 mb-2 opacity-50" />
+              <p>Aucun aperçu disponible ou texte non extrait.</p>
             </div>
           )}
         </CardContent>
       </Card>
     ) : (
-      <div className="flex items-center justify-center h-full text-muted-foreground">
-        <p>Sélectionnez ou téléversez un document pour commencer.</p>
+      <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+        <FileText className="w-12 h-12 mb-4 opacity-50" />
+        <p className="text-lg font-medium mb-2">Sélectionnez un document</p>
+        <p className="text-sm">Téléversez ou choisissez un document pour commencer l'analyse.</p>
       </div>
     )}
   </div>

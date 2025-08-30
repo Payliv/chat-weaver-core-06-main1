@@ -7,7 +7,7 @@ import { DocumentPreview } from '@/components/document-studio/DocumentPreview';
 import { DocumentChat } from '@/components/document-studio/DocumentChat';
 import { DocumentActions } from '@/components/document-studio/DocumentActions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Eye, MessageSquare, Wand2 } from 'lucide-react';
+import { MessageSquare, Wand2 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 export default function DocumentStudio() {
@@ -16,7 +16,7 @@ export default function DocumentStudio() {
     selectedFile,
     chatMessages,
     isLoading,
-    isProcessing,
+    isProcessing, // Pass isProcessing to DocumentPreview
     chatLoading,
     selectFile,
     uploadFile,
@@ -66,7 +66,7 @@ export default function DocumentStudio() {
         <div className="flex-1 flex flex-col">
           <DocumentPreview
             selectedFile={selectedFile}
-            isProcessing={isProcessing}
+            isProcessing={isProcessing} // Pass isProcessing here
             onDownloadFile={downloadFile}
           />
         </div>
