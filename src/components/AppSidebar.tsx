@@ -35,6 +35,7 @@ export function AppSidebar({ isLandingMode = false, onAuthRequired }: AppSidebar
   const [items, setItems] = useState<Conversation[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [isSubscribed, setIsSubscribed] = useState(false); // New state for subscription status
 
   const loadConversations = async () => {
     if (isLandingMode) return;
@@ -51,6 +52,15 @@ export function AppSidebar({ isLandingMode = false, onAuthRequired }: AppSidebar
         .eq('role', 'super_admin');
       
       setIsSuperAdmin(roles && roles.length > 0);
+
+      // Fetch subscription status
+      const { data: subData, error: subError } = await supabase.functions.invoke('check-subscription');
+      if (subError) {
+        console.error('Error checking subscription:', subError);
+        setIsSubscribed(false);
+      } else {
+        setIsSubscribed(subData?.subscribed || false);
+      }
       
       const convos = await conversationService.loadConversations(user.id);
       setItems(convos);
@@ -213,6 +223,16 @@ export function AppSidebar({ isLandingMode = false, onAuthRequired }: AppSidebar
                   {!isCollapsed && <span className="ml-2">Équipe</span>}
                 </SidebarMenuButton>
               </SidebarMenuItem>
+              
+              {isSubscribed && ( // Only show for subscribed users
+                <SidebarMenuItem>
+                  <SidebarMenuButton onClick={() => handleNavigation('/share-subscription')} isActive={location.pathname === '/share-subscription'} className="w-full justify-start text-muted-foreground hover:text-foreground">
+                    <Share2 className="w-4 h-4" />
+                    {!isCollapsed && <span className="ml-2">Partager l'abonnement</span>}
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
+
               <SidebarMenuItem>
                 <SidebarMenuButton onClick={() => handleNavigation('/ebooks')} isActive={location.pathname === '/ebooks'} className="w-full justify-start text-muted-foreground hover:text-foreground">
                   <Wand2 className="w-4 h-4" />

@@ -15,6 +15,7 @@ import SuperAdminDashboard from "./pages/SuperAdminDashboard";
 import ResetPassword from "./pages/ResetPassword";
 import UpdatePassword from "./pages/UpdatePassword";
 import AcceptInvitation from "./pages/AcceptInvitation";
+import ShareSubscription from "./pages/ShareSubscription"; // New import
 import Ebooks from "./pages/Ebooks";
 import DalleStudio from "./pages/DalleStudio";
 import TTSStudio from "./pages/TTSStudio";
@@ -41,6 +42,7 @@ const App = () => (
         <Route path="/settings" element={<Settings />} />
         <Route path="/team" element={<Team />} />
         <Route path="/team/accept-invitation" element={<AcceptInvitation />} />
+        <Route path="/share-subscription" element={<ShareSubscription />} /> {/* New Route */}
         <Route path="/speech-to-text" element={<SpeechToText />} />
         <Route path="/ebooks" element={<Ebooks />} />
         <Route path="/dalle-studio" element={<DalleStudio />} />
