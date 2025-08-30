@@ -9,7 +9,6 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { Users, UserPlus, Settings, History, Mail, Clock, CheckCircle, XCircle, Crown, User, Calendar, Trash2, Ban, RefreshCw, ArrowLeft, Shield } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
