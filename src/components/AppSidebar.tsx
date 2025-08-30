@@ -208,34 +208,34 @@ export function AppSidebar({ isLandingMode = false, onAuthRequired }: AppSidebar
           <SidebarGroupContent>
             <SidebarMenu className="space-y-1">
               <SidebarMenuItem>
-                <SidebarMenuButton onClick={() => handleNavigation('/team')} className="w-full justify-start text-muted-foreground hover:text-foreground">
+                <SidebarMenuButton onClick={() => handleNavigation('/team')} isActive={location.pathname === '/team'} className="w-full justify-start text-muted-foreground hover:text-foreground">
                   <Users className="w-4 h-4" />
                   {!isCollapsed && <span className="ml-2">Équipe</span>}
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton onClick={() => handleNavigation('/ebooks')} className="w-full justify-start text-muted-foreground hover:text-foreground">
+                <SidebarMenuButton onClick={() => handleNavigation('/ebooks')} isActive={location.pathname === '/ebooks'} className="w-full justify-start text-muted-foreground hover:text-foreground">
                   <Wand2 className="w-4 h-4" />
                   {!isCollapsed && <span className="ml-2">Ebooks</span>}
                 </SidebarMenuButton>
               </SidebarMenuItem>
               
               <SidebarMenuItem>
-                <SidebarMenuButton onClick={() => handleNavigation('/dalle-studio')} className="w-full justify-start text-muted-foreground hover:text-foreground">
+                <SidebarMenuButton onClick={() => handleNavigation('/dalle-studio')} isActive={location.pathname === '/dalle-studio'} className="w-full justify-start text-muted-foreground hover:text-foreground">
                   <Image className="w-4 h-4" />
                   {!isCollapsed && <span className="ml-2">Studio DALL-E</span>}
                 </SidebarMenuButton>
               </SidebarMenuItem>
               
               <SidebarMenuItem>
-                <SidebarMenuButton onClick={() => handleNavigation('/tts-studio')} className="w-full justify-start text-muted-foreground hover:text-foreground">
+                <SidebarMenuButton onClick={() => handleNavigation('/tts-studio')} isActive={location.pathname === '/tts-studio'} className="w-full justify-start text-muted-foreground hover:text-foreground">
                   <Volume2 className="w-4 h-4" />
                   {!isCollapsed && <span className="ml-2">Studio TTS</span>}
                 </SidebarMenuButton>
               </SidebarMenuItem>
               
               <SidebarMenuItem>
-                <SidebarMenuButton onClick={() => handleNavigation('/speech-to-text')} className="w-full justify-start text-muted-foreground hover:text-foreground">
+                <SidebarMenuButton onClick={() => handleNavigation('/speech-to-text')} isActive={location.pathname === '/speech-to-text'} className="w-full justify-start text-muted-foreground hover:text-foreground">
                   <Languages className="w-4 h-4" />
                   {!isCollapsed && <span className="ml-2">Speech-to-Text</span>}
                 </SidebarMenuButton>
@@ -243,7 +243,7 @@ export function AppSidebar({ isLandingMode = false, onAuthRequired }: AppSidebar
               
               {false && (
                 <SidebarMenuItem>
-                  <SidebarMenuButton onClick={() => handleNavigation('/code-studio')} className="w-full justify-start text-muted-foreground hover:text-foreground">
+                  <SidebarMenuButton onClick={() => handleNavigation('/code-studio')} isActive={location.pathname === '/code-studio'} className="w-full justify-start text-muted-foreground hover:text-foreground">
                     <Code2 className="w-4 h-4" />
                     {!isCollapsed && <span className="ml-2">Code Studio</span>}
                   </SidebarMenuButton>
@@ -251,28 +251,28 @@ export function AppSidebar({ isLandingMode = false, onAuthRequired }: AppSidebar
               )}
               
               <SidebarMenuItem>
-                <SidebarMenuButton onClick={() => handleNavigation('/documents')} className="w-full justify-start text-muted-foreground hover:text-foreground">
+                <SidebarMenuButton onClick={() => handleNavigation('/documents')} isActive={location.pathname === '/documents'} className="w-full justify-start text-muted-foreground hover:text-foreground">
                   <FileText className="w-4 h-4" />
                   {!isCollapsed && <span className="ml-2">Documents</span>}
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
               <SidebarMenuItem>
-                <SidebarMenuButton onClick={() => handleNavigation('/social-media-studio')} className="w-full justify-start text-muted-foreground hover:text-foreground">
+                <SidebarMenuButton onClick={() => handleNavigation('/social-media-studio')} isActive={location.pathname === '/social-media-studio'} className="w-full justify-start text-muted-foreground hover:text-foreground">
                   <Share2 className="w-4 h-4" />
                   {!isCollapsed && <span className="ml-2">Social Studio</span>}
                 </SidebarMenuButton>
               </SidebarMenuItem>
               
               <SidebarMenuItem>
-                <SidebarMenuButton onClick={() => handleNavigation('/billing')} className="w-full justify-start text-muted-foreground hover:text-foreground">
+                <SidebarMenuButton onClick={() => handleNavigation('/billing')} isActive={location.pathname === '/billing'} className="w-full justify-start text-muted-foreground hover:text-foreground">
                   <CreditCard className="w-4 h-4" />
                   {!isCollapsed && <span className="ml-2">Abonnement & Tokens</span>}
                 </SidebarMenuButton>
               </SidebarMenuItem>
               
               <SidebarMenuItem>
-                <SidebarMenuButton onClick={() => handleNavigation('/settings')} className="w-full justify-start text-muted-foreground hover:text-foreground">
+                <SidebarMenuButton onClick={() => handleNavigation('/settings')} isActive={location.pathname === '/settings'} className="w-full justify-start text-muted-foreground hover:text-foreground">
                   <Settings className="w-4 h-4" />
                   {!isCollapsed && <span className="ml-2">Paramètres</span>}
                 </SidebarMenuButton>
@@ -280,7 +280,7 @@ export function AppSidebar({ isLandingMode = false, onAuthRequired }: AppSidebar
               
               {isSuperAdmin && (
                 <SidebarMenuItem>
-                  <SidebarMenuButton onClick={() => handleNavigation('/super-admin')} className="w-full justify-start text-orange-600 hover:text-orange-700">
+                  <SidebarMenuButton onClick={() => handleNavigation('/super-admin')} isActive={location.pathname === '/super-admin'} className="w-full justify-start text-orange-600 hover:text-orange-700">
                     <Shield className="w-4 h-4" />
                     {!isCollapsed && <span className="ml-2">Super Admin</span>}
                   </SidebarMenuButton>
