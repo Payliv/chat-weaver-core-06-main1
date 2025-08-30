@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -34,23 +34,46 @@ export default function TeamPage() {
   const [teams, setTeams] = useState<Team[]>([]);
   const [teamLimit, setTeamLimit] = useState(1);
   const [subscription, setSubscription] = useState('Gratuit');
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
-  const [newTeamName, setNewTeamName] = useState('');
   const [teamHistory, setTeamHistory] = useState<TeamHistoryItem[]>([]);
   const [showHistoryDialog, setShowHistoryDialog] = useState(false);
-  const [isCreating, setIsCreating] = useState(false);
   const [loadingHistory, setLoadingHistory] = useState(false);
   
   const { toast } = useToast();
 
-  useEffect(() => {
-    document.title = 'Gestion d\'équipe - ChAtélix';
-    setMeta('description', 'Gérez vos équipes, invitez des membres et collaborez efficacement sur ChAtélix.');
-    loadTeams();
-  }, []);
+  const createDefaultTeamForUser = useCallback(async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
 
-  const loadTeams = async () => {
+      toast({
+        title: "Création de votre équipe...",
+        description: "Une équipe par défaut est en cours de création pour vous.",
+        duration: 3000
+      });
+
+      const { error } = await supabase.functions.invoke('team-management', {
+        body: { action: 'create_team', teamName: 'Mon Équipe' } // Explicitly pass default name
+      });
+
+      if (error) throw new Error(error.message || 'Erreur lors de la création de l\'équipe par défaut');
+      
+      toast({
+        title: "Équipe créée !",
+        description: "Votre équipe par défaut a été créée avec succès.",
+      });
+      await loadTeams(); // Reload teams to show the new one
+    } catch (error: any) {
+      console.error('Error creating default team:', error);
+      toast({
+        title: "Erreur",
+        description: error.message || "Impossible de créer l'équipe par défaut.",
+        variant: "destructive"
+      });
+    }
+  }, [toast]); // Add toast to dependencies
+
+  const loadTeams = useCallback(async () => {
     try {
       setLoading(true);
       const { data, error } = await supabase.functions.invoke('team-management', { body: { action: 'get_teams' } });
@@ -59,32 +82,23 @@ export default function TeamPage() {
       setTeams(teamData.teams || []);
       setTeamLimit(teamData.teamLimit || 1);
       setSubscription(teamData.subscription || 'Gratuit');
+
+      // If no teams found, create a default one
+      if ((teamData.teams || []).length === 0) {
+        await createDefaultTeamForUser();
+      }
     } catch (error: any) {
       toast({ title: "Erreur", description: error.message, variant: "destructive" });
     } finally {
       setLoading(false);
     }
-  };
+  }, [createDefaultTeamForUser, toast]); // Add createDefaultTeamForUser and toast to dependencies
 
-  const handleCreateTeam = async () => {
-    if (!newTeamName.trim()) {
-      toast({ title: "Erreur", description: "Le nom de l'équipe est requis", variant: "destructive" });
-      return;
-    }
-    setIsCreating(true);
-    try {
-      const { error } = await supabase.functions.invoke('team-management', { body: { action: 'create_team', teamName: newTeamName.trim() } });
-      if (error) throw new Error(error.message);
-      toast({ title: "Succès", description: "Équipe créée" });
-      setNewTeamName('');
-      setShowCreateDialog(false);
-      await loadTeams();
-    } catch (error: any) {
-      toast({ title: "Erreur", description: error.message, variant: "destructive" });
-    } finally {
-      setIsCreating(false);
-    }
-  };
+  useEffect(() => {
+    document.title = 'Gestion d\'équipe - ChAtélix';
+    setMeta('description', 'Gérez vos équipes, invitez des membres et collaborez efficacement sur ChAtélix.');
+    loadTeams();
+  }, [loadTeams]);
 
   const handleInviteMember = async (teamId: string, email: string) => {
     try {
@@ -150,9 +164,8 @@ export default function TeamPage() {
     }
   };
 
-  const ownedTeamsCount = teams.filter(t => t.isOwner).length;
-  const maxTeams = subscription.toLowerCase().includes('pro') ? 5 : subscription.toLowerCase().includes('business') ? 20 : subscription.toLowerCase().includes('enterprise') ? 999 : 1;
-  const canCreateTeam = teamLimit > 1 && ownedTeamsCount < maxTeams;
+  // No explicit team creation button needed, as a default team is created automatically
+  // The user will always have at least one team to manage.
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background">
@@ -167,7 +180,7 @@ export default function TeamPage() {
                 <div className="p-2 rounded-lg bg-primary/10"><Users className="h-6 w-6 text-primary" /></div>
                 <div>
                   <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">Gestion d'équipe</h1>
-                  <p className="text-sm text-muted-foreground">Plan {subscription} - {ownedTeamsCount}/{maxTeams === 999 ? '∞' : maxTeams} équipes • {teamLimit === 999 ? 'Illimité' : `${teamLimit} membres max`}</p>
+                  <p className="text-sm text-muted-foreground">Plan {subscription} - {teams.filter(t => t.isOwner).length}/{teamLimit === 999 ? '∞' : teamLimit} équipes • {teamLimit === 999 ? 'Illimité' : `${teamLimit} membres max`}</p>
                 </div>
               </div>
             </div>
@@ -175,29 +188,6 @@ export default function TeamPage() {
               <Button variant="outline" size="sm" onClick={loadTeams} disabled={loading} className="flex items-center gap-2">
                 <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} /> Actualiser
               </Button>
-              {canCreateTeam && (
-                <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-                  <DialogTrigger asChild>
-                    <Button className="flex items-center gap-2"><UserPlus className="h-4 w-4" /> Créer une équipe</Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Créer une nouvelle équipe</DialogTitle>
-                      <DialogDescription>Créez une équipe pour collaborer.</DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div>
-                        <Label htmlFor="teamName">Nom de l'équipe</Label>
-                        <Input id="teamName" value={newTeamName} onChange={(e) => setNewTeamName(e.target.value)} placeholder="Ex: Équipe Marketing" required />
-                      </div>
-                      <div className="flex justify-end gap-2">
-                        <Button type="button" variant="outline" onClick={() => setShowCreateDialog(false)}>Annuler</Button>
-                        <Button onClick={handleCreateTeam} disabled={isCreating || !newTeamName.trim()}>{isCreating ? 'Création...' : 'Créer'}</Button>
-                      </div>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              )}
             </div>
           </div>
         </div>
@@ -218,12 +208,11 @@ export default function TeamPage() {
         )}
 
         <div className="space-y-6">
-          {teams.length === 0 ? (
+          {teams.length === 0 && !loading ? (
             <Card className="p-8 text-center">
               <div className="p-4 mx-auto w-fit rounded-full bg-muted/50 mb-4"><Users className="h-8 w-8 text-muted-foreground" /></div>
-              <h3 className="text-lg font-semibold mb-2">Aucune équipe</h3>
-              <p className="text-muted-foreground mb-4">{teamLimit <= 1 ? "Votre plan ne permet pas de créer des équipes." : `Vous pouvez créer jusqu'à ${maxTeams === 999 ? 'un nombre illimité' : maxTeams} équipe${maxTeams > 1 ? 's' : ''}.`}</p>
-              {canCreateTeam && <Button onClick={() => setShowCreateDialog(true)}>Créer ma première équipe</Button>}
+              <h3 className="text-lg font-semibold mb-2">Chargement de votre équipe...</h3>
+              <p className="text-muted-foreground mb-4">Une équipe par défaut est en cours de création pour vous.</p>
             </Card>
           ) : (
             teams.map((team) => (

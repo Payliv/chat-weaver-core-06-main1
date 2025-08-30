@@ -1,3 +1,7 @@
+/// <reference lib="deno.ns" />
+/// <reference types="https://deno.land/std@0.190.0/http/server.ts" />
+/// <reference types="https://esm.sh/@supabase/supabase-js@2.45.0" />
+
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient, SupabaseClient, User } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
@@ -91,13 +95,14 @@ const sendInvitationEmail = async (email: string, teamName: string, inviterName:
 // --- Action Handlers ---
 
 const handleCreateTeam = async (supabaseService: SupabaseClient, user: User, subInfo: any, body: any) => {
+  const teamName = body.teamName || 'Mon Équipe'; // Use default if not provided
   const { data: existingTeams } = await supabaseService.from('teams').select('id', { count: 'exact' }).eq('owner_id', user.id);
   if ((existingTeams?.length || 0) >= subInfo.maxTeams) throw new Error(`Limite d'équipes atteinte (${subInfo.maxTeams}).`);
 
-  const { data: team, error } = await supabaseService.from('teams').insert({ name: body.teamName, owner_id: user.id }).select().single();
+  const { data: team, error } = await supabaseService.from('teams').insert({ name: teamName, owner_id: user.id }).select().single();
   if (error) throw error;
 
-  await logTeamActivity(supabaseService, 'create_team', team.id, user.id, { team_name: body.teamName });
+  await logTeamActivity(supabaseService, 'create_team', team.id, user.id, { team_name: teamName });
   return { success: true, team };
 };
 
