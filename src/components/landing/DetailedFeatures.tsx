@@ -4,12 +4,6 @@ import { Brain, Image, Mic, Volume2 } from "lucide-react";
 
 const detailedFeatures = [
   {
-    icon: Brain,
-    title: "Modèles IA illimités",
-    description: "GPT-5, Claude 3.5, Llama 3.3 pour toutes vos créations et analyses.",
-    image: "/lovable-uploads/18559761-9d7a-4f88-b792-3c402d548818.png"
-  },
-  {
     icon: Image,
     title: "Génération d'images (DALL·E 3)",
     description: "Créez des images haute qualité pour vos projets marketing, contenus ou designs.",
