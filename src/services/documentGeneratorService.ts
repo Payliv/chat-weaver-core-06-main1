@@ -7,17 +7,9 @@ import { OpenRouterService } from './openRouterService';
 export interface DocumentGenerationOptions {
   content: string;
   type: 'pdf' | 'docx' | 'pptx' | 'markdown' | 'html' | 'xlsx' | 'txt'; // Added 'txt'
-  template?: 'report' | 'presentation' | 'letter' | 'resume' | 'contract' | 'stage_report' | 'work_contract' | 'service_contract' | 'rental_contract' | 'motivation_letter' | 'job_application' | 'internship_application' | 'quote' | 'invoice' | 'school_essay' | 'university_thesis' | 'email';
+  template?: 'report' | 'presentation' | 'letter' | 'resume' | 'contract';
   enhanceWithAI?: boolean;
   model?: string; // OpenRouter model pour amélioration IA
-  // New fields for structured document generation
-  title?: string;
-  author?: string;
-  recipient?: string;
-  sender?: string;
-  company?: string;
-  date?: string;
-  details?: Record<string, string>; // Generic details for contracts, quotes, etc.
 }
 
 /**
@@ -30,16 +22,13 @@ export class DocumentGeneratorService {
    * Génère un document avec amélioration IA optionnelle
    */
   static async generateDocument(options: DocumentGenerationOptions): Promise<string> {
-    let { content, type, template, enhanceWithAI = false, model = 'anthropic/claude-3.5-sonnet', ...docDetails } = options;
+    let { content, type, template, enhanceWithAI = false, model = 'anthropic/claude-3.5-sonnet' } = options;
 
-    console.log('📄 Génération document:', { type, template, enhanceWithAI, docDetails });
+    console.log('📄 Génération document:', { type, template, enhanceWithAI });
 
     // Amélioration IA du contenu si demandée
     if (enhanceWithAI) {
-      content = await this.enhanceContentWithAI(content, type, template, model, docDetails);
-    } else if (template) {
-      // If no AI enhancement, but a template is provided, generate content based on template
-      content = await this.generateContentFromTemplate(content, template, model, docDetails);
+      content = await this.enhanceContentWithAI(content, type, template, model);
     }
 
     // Génération selon le format
@@ -66,10 +55,10 @@ export class DocumentGeneratorService {
   /**
    * Améliore le contenu avec IA via OpenRouter
    */
-  private static async enhanceContentWithAI(content: string, type: string, template?: string, model?: string, docDetails?: Record<string, string>): Promise<string> {
+  private static async enhanceContentWithAI(content: string, type: string, template?: string, model?: string): Promise<string> {
     console.log('🤖 Amélioration IA du contenu avec', model);
 
-    const prompt = this.createEnhancementPrompt(content, type, template, docDetails);
+    const prompt = this.createEnhancementPrompt(content, type, template);
     
     try {
       const result = await OpenRouterService.generateWithModel(
@@ -86,30 +75,9 @@ export class DocumentGeneratorService {
   }
 
   /**
-   * Génère du contenu basé sur un template via l'IA
-   */
-  private static async generateContentFromTemplate(basePrompt: string, template: string, model?: string, docDetails?: Record<string, string>): Promise<string> {
-    console.log('🤖 Génération de contenu à partir du template avec', model);
-
-    const prompt = this.createTemplateGenerationPrompt(basePrompt, template, docDetails);
-
-    try {
-      const result = await OpenRouterService.generateWithModel(
-        [{ role: 'user', content: prompt }],
-        model,
-        { temperature: 0.7, max_tokens: 4000 }
-      );
-      return result.text;
-    } catch (error) {
-      console.warn('❌ Génération de contenu via template échouée, utilisation du prompt original:', error);
-      return basePrompt;
-    }
-  }
-
-  /**
    * Crée le prompt d'amélioration selon le type de document
    */
-  private static createEnhancementPrompt(content: string, type: string, template?: string, docDetails?: Record<string, string>): string {
+  private static createEnhancementPrompt(content: string, type: string, template?: string): string {
     const basePrompt = `Improve and structure the following content for a professional ${type.toUpperCase()} document`;
     
     const templateInstructions = {
@@ -117,19 +85,7 @@ export class DocumentGeneratorService {
       presentation: 'as engaging presentation slides with clear headings and bullet points',
       letter: 'as a professional business letter with proper formatting',
       resume: 'as a professional resume with clear sections and achievements',
-      contract: 'as a legal contract with proper clauses and terms',
-      stage_report: 'as a detailed internship report, including context, missions, achievements, and conclusion',
-      work_contract: 'as a standard employment contract, including parties, terms, and conditions',
-      service_contract: 'as a service agreement, outlining scope, deliverables, and payment terms',
-      rental_contract: 'as a residential lease agreement, covering property details, rent, and tenant/landlord obligations',
-      motivation_letter: 'as a compelling cover letter, highlighting skills and motivation for a specific role',
-      job_application: 'as a professional job application letter, tailored to a job offer',
-      internship_application: 'as an internship application letter, emphasizing learning objectives and skills',
-      quote: 'as a detailed commercial quote, including itemized services/products, prices, and total',
-      invoice: 'as a professional invoice, with itemized services/products, amounts, taxes, and payment due date',
-      school_essay: 'as a well-structured school essay, with introduction, body paragraphs, and conclusion',
-      university_thesis: 'as an academic university thesis/dissertation chapter, with research, analysis, and citations',
-      email: 'as a professional email, with clear subject, greeting, body, and call to action'
+      contract: 'as a legal contract with proper clauses and terms'
     };
 
     const typeInstructions = {
@@ -152,100 +108,6 @@ export class DocumentGeneratorService {
     enhancedPrompt += `\n\nOriginal content:\n${content}\n\nImproved version:`;
 
     return enhancedPrompt;
-  }
-
-  /**
-   * Crée le prompt de génération de contenu à partir d'un template
-   */
-  private static createTemplateGenerationPrompt(basePrompt: string, template: string, docDetails?: Record<string, string>): string {
-    let prompt = `Génère un document de type "${template}" en français.`;
-
-    switch (template) {
-      case 'stage_report':
-        prompt += `\n\nSujet du rapport de stage: ${basePrompt}.`;
-        if (docDetails?.company) prompt += ` Entreprise: ${docDetails.company}.`;
-        if (docDetails?.period) prompt += ` Période: ${docDetails.period}.`;
-        if (docDetails?.missions) prompt += ` Missions principales: ${docDetails.missions}.`;
-        prompt += `\nLe rapport doit inclure une introduction, le contexte de l'entreprise, les missions réalisées, les compétences acquises et une conclusion.`;
-        break;
-      case 'work_contract':
-        prompt += `\n\nType de contrat de travail: ${basePrompt}.`;
-        if (docDetails?.employeeName) prompt += ` Nom de l'employé: ${docDetails.employeeName}.`;
-        if (docDetails?.employerName) prompt += ` Nom de l'employeur: ${docDetails.employerName}.`;
-        if (docDetails?.position) prompt += ` Poste: ${docDetails.position}.`;
-        if (docDetails?.salary) prompt += ` Salaire: ${docDetails.salary}.`;
-        prompt += `\nLe contrat doit inclure les informations sur les parties, le poste, la rémunération, la durée et les conditions générales.`;
-        break;
-      case 'service_contract':
-        prompt += `\n\nObjet du contrat de prestation: ${basePrompt}.`;
-        if (docDetails?.clientName) prompt += ` Nom du client: ${docDetails.clientName}.`;
-        if (docDetails?.providerName) prompt += ` Nom du prestataire: ${docDetails.providerName}.`;
-        if (docDetails?.services) prompt += ` Services: ${docDetails.services}.`;
-        if (docDetails?.price) prompt += ` Prix: ${docDetails.price}.`;
-        prompt += `\nLe contrat doit détailler les services, les livrables, les délais et les modalités de paiement.`;
-        break;
-      case 'rental_contract':
-        prompt += `\n\nObjet du contrat de location: ${basePrompt}.`;
-        if (docDetails?.landlord) prompt += ` Propriétaire: ${docDetails.landlord}.`;
-        if (docDetails?.tenant) prompt += ` Locataire: ${docDetails.tenant}.`;
-        if (docDetails?.address) prompt += ` Adresse du bien: ${docDetails.address}.`;
-        if (docDetails?.rent) prompt += ` Loyer mensuel: ${docDetails.rent}.`;
-        prompt += `\nLe contrat doit inclure les détails du bien, le montant du loyer, la durée et les obligations des parties.`;
-        break;
-      case 'motivation_letter':
-        prompt += `\n\nObjet de la lettre de motivation: ${basePrompt}.`;
-        if (docDetails?.jobTitle) prompt += ` Poste visé: ${docDetails.jobTitle}.`;
-        if (docDetails?.company) prompt += ` Entreprise: ${docDetails.company}.`;
-        if (docDetails?.skills) prompt += ` Compétences clés: ${docDetails.skills}.`;
-        prompt += `\nLa lettre doit être percutante, mettre en avant les motivations et les compétences du candidat.`;
-        break;
-      case 'job_application':
-        prompt += `\n\nObjet de la demande d'emploi: ${basePrompt}.`;
-        if (docDetails?.jobTitle) prompt += ` Poste: ${docDetails.jobTitle}.`;
-        if (docDetails?.company) prompt += ` Entreprise: ${docDetails.company}.`;
-        prompt += `\nLa demande doit être formelle et adaptée à une offre d'emploi spécifique.`;
-        break;
-      case 'internship_application':
-        prompt += `\n\nObjet de la demande de stage: ${basePrompt}.`;
-        if (docDetails?.company) prompt += ` Entreprise: ${docDetails.company}.`;
-        if (docDetails?.period) prompt += ` Période: ${docDetails.period}.`;
-        prompt += `\nLa demande doit mettre en avant les objectifs d'apprentissage et les compétences.`;
-        break;
-      case 'quote':
-        prompt += `\n\nObjet du devis: ${basePrompt}.`;
-        if (docDetails?.clientName) prompt += ` Client: ${docDetails.clientName}.`;
-        if (docDetails?.items) prompt += ` Articles/Services: ${docDetails.items}.`;
-        prompt += `\nLe devis doit être détaillé avec les prix unitaires, la quantité, le total HT et TTC.`;
-        break;
-      case 'invoice':
-        prompt += `\n\nObjet de la facture: ${basePrompt}.`;
-        if (docDetails?.clientName) prompt += ` Client: ${docDetails.clientName}.`;
-        if (docDetails?.items) prompt += ` Articles/Services: ${docDetails.items}.`;
-        prompt += `\nLa facture doit inclure les détails de la prestation, les montants, les taxes et la date d'échéance.`;
-        break;
-      case 'school_essay':
-        prompt += `\n\nSujet de l'exposé scolaire: ${basePrompt}.`;
-        if (docDetails?.level) prompt += ` Niveau scolaire: ${docDetails.level}.`;
-        prompt += `\nL'exposé doit être structuré avec introduction, développement et conclusion.`;
-        break;
-      case 'university_thesis':
-        prompt += `\n\nSujet de la thèse/mémoire: ${basePrompt}.`;
-        if (docDetails?.field) prompt += ` Domaine d'étude: ${docDetails.field}.`;
-        prompt += `\nLe contenu doit être académique, inclure une problématique, une méthodologie, une analyse et une bibliographie.`;
-        break;
-      case 'email':
-        prompt += `\n\nObjet de l'e-mail: ${basePrompt}.`;
-        if (docDetails?.subject) prompt += ` Sujet: ${docDetails.subject}.`;
-        if (docDetails?.recipient) prompt += ` Destinataire: ${docDetails.recipient}.`;
-        prompt += `\nL'e-mail doit être professionnel, clair et concis.`;
-        break;
-      default:
-        prompt += `\n\nContenu principal: ${basePrompt}.`;
-        break;
-    }
-
-    prompt += `\n\nRéponds uniquement avec le contenu du document, sans introduction ni conclusion supplémentaires. Utilise le format Markdown pour une structure claire.`;
-    return prompt;
   }
 
   /**

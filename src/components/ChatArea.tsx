@@ -1,4 +1,7 @@
 import { useEffect, useState, useRef } from "react";
+import { Document as DocxDocument, Packer, Paragraph } from "docx";
+import PptxGenJS from "pptxgenjs";
+import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { ChatMessage } from "./ChatMessage";
 import { ChatInput } from "./ChatInput";
 import { ImageControls } from "./ImageControls";
@@ -6,15 +9,18 @@ import { ModelStatusIndicator } from "./ModelStatusIndicator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { MessageSquare } from "lucide-react";
+import { ModelRouterService } from '@/services/modelRouterService';
 import { PromptEngineerService } from '@/services/promptEngineerService';
+import { aiService } from '@/services/aiService';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ImageService } from "@/services/imageService";
-import { StreamingService } from "@/services/streamingService";
-import { StreamingMessage } from "./StreamingMessage";
+import { StreamingService } from "@/services/streamingService"; // Added import
+import { StreamingMessage } from "./StreamingMessage"; // Added import
+
+
+import { OpenRouterService } from "@/services/openRouterService";
 import { AppGeneratorService } from "@/services/appGeneratorService";
-import { useNavigate } from "react-router-dom";
-import { ModelRouterService } from '@/services/modelRouterService'; // Corrected import path
 
 interface Message {
   id: string;
@@ -39,21 +45,128 @@ const isVideoRequest = (message: string): boolean => {
   );
 };
 
-// Helper: Document request detection
-const isDocumentRequest = (message: string): { isDocRequest: boolean; docType?: string; docPrompt?: string } => {
-  const docKeywords = [
-    'rapport de stage', 'contrat', 'location', 'contrat de travail', 'contrat de prestation',
-    'email', 'e-mail', 'lettre de motivation', 'demande de stage', 'demande d\'emploi',
-    'devis', 'facture', 'exposé scolaire', 'thèse', 'mémoire', 'document', 'génère un document'
-  ];
+// Helpers: generation of documents
+const wrapText = (text: string, max = 90) =>
+  text
+    .split(/\r?\n/)
+    .flatMap((line) => {
+      const chunks: string[] = [];
+      let current = line;
+      while (current.length > max) {
+        chunks.push(current.slice(0, max));
+        current = current.slice(max);
+      }
+      chunks.push(current);
+      return chunks;
+    });
+
+const createPdfDataUrl = async (text: string) => {
+  const pdfDoc = await PDFDocument.create();
+  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const fontSize = 12;
+  const lineHeight = fontSize * 1.2;
+  const margin = 50;
   
-  const lowerMessage = message.toLowerCase();
-  for (const keyword of docKeywords) {
-    if (lowerMessage.includes(keyword)) {
-      return { isDocRequest: true, docType: keyword, docPrompt: message };
+  let currentPage = pdfDoc.addPage();
+  const { width, height } = currentPage.getSize();
+  let y = height - margin;
+  
+  const lines = wrapText(text, Math.floor((width - 2 * margin) / (fontSize * 0.6)));
+  
+  lines.forEach((line) => {
+    // Si on n'a plus de place sur la page, créer une nouvelle page
+    if (y < margin + lineHeight) {
+      currentPage = pdfDoc.addPage();
+      y = height - margin;
+    }
+    
+    currentPage.drawText(line || " ", { 
+      x: margin, 
+      y, 
+      size: fontSize, 
+      font,
+      color: rgb(0, 0, 0)
+    });
+    y -= lineHeight;
+  });
+  
+  return await pdfDoc.saveAsBase64({ dataUri: true });
+};
+
+const createDocxDataUrl = async (text: string) => {
+  const doc = new DocxDocument({
+    sections: [
+      { 
+        properties: {}, 
+        children: text.split(/\r?\n/).map((line) => new Paragraph({
+          text: line || " ",
+          spacing: {
+            after: 120,
+          }
+        }))
+      },
+    ],
+  });
+  const base64 = await Packer.toBase64String(doc);
+  return `data:application/vnd.openxmlformats-officedocument.wordprocessingml.document;base64,${base64}`;
+};
+
+const createPptxDataUrl = async (text: string) => {
+  const pptx = new PptxGenJS();
+  pptx.defineLayout({ name: 'A4', width: 10, height: 7.5 });
+  
+  // Diviser le texte en slides si trop long
+  const maxCharsPerSlide = 800;
+  const textChunks = [];
+  
+  if (text.length <= maxCharsPerSlide) {
+    textChunks.push(text);
+  } else {
+    const paragraphs = text.split('\n');
+    let currentChunk = '';
+    
+    for (const paragraph of paragraphs) {
+      if ((currentChunk + paragraph).length > maxCharsPerSlide && currentChunk) {
+        textChunks.push(currentChunk.trim());
+        currentChunk = paragraph + '\n';
+      } else {
+        currentChunk += paragraph + '\n';
+      }
+    }
+    
+    if (currentChunk.trim()) {
+      textChunks.push(currentChunk.trim());
     }
   }
-  return { isDocRequest: false };
+  
+  textChunks.forEach((chunk, index) => {
+    const slide = pptx.addSlide();
+    slide.addText(chunk, { 
+      x: 0.5, 
+      y: 1, 
+      w: 9, 
+      h: 5.5, 
+      fontSize: 16,
+      color: '000000',
+      align: 'left',
+      valign: 'top',
+      wrap: true
+    });
+    
+    if (textChunks.length > 1) {
+      slide.addText(`${index + 1} / ${textChunks.length}`, {
+        x: 8.5,
+        y: 6.5,
+        w: 1,
+        h: 0.5,
+        fontSize: 12,
+        color: '666666'
+      });
+    }
+  });
+  
+  const base64 = await pptx.write({ outputType: "base64" });
+  return `data:application/vnd.openxmlformats-officedocument.presentationml.presentation;base64,${base64}`;
 };
 
 interface ChatAreaProps {
@@ -74,7 +187,6 @@ export const ChatArea = ({ selectedModel, systemPrompt, safeMode, isLandingMode 
   const { toast } = useToast();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const navigate = useNavigate();
 
   // State for streaming messages
   const [streamingMessageContent, setStreamingMessageContent] = useState('');
@@ -146,7 +258,7 @@ export const ChatArea = ({ selectedModel, systemPrompt, safeMode, isLandingMode 
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messages, isLoading, streamingMessageContent]);
+  }, [messages, isLoading, streamingMessageContent]); // Added streamingMessageContent to dependencies
 
   const handleSendMessage = async (content: string) => {
     const userMessage: Message = {
@@ -158,8 +270,8 @@ export const ChatArea = ({ selectedModel, systemPrompt, safeMode, isLandingMode 
 
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
-    setIsAssistantStreaming(true);
-    setStreamingMessageContent('');
+    setIsAssistantStreaming(true); // Start streaming indicator
+    setStreamingMessageContent(''); // Clear previous streaming content
 
 
     try {
@@ -168,10 +280,11 @@ export const ChatArea = ({ selectedModel, systemPrompt, safeMode, isLandingMode 
       if (!convoId) {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
+          // En mode landing, déclencher le popup d'auth au lieu d'échouer
           if (isLandingMode && onAuthRequired) {
-            setMessages(prev => prev.slice(0, -1));
-            setIsLoading(false);
-            setIsAssistantStreaming(false);
+            setMessages(prev => prev.slice(0, -1)); // Retirer le message utilisateur ajouté
+            setIsLoading(false); // Réinitialiser le loading
+            setIsAssistantStreaming(false); // Stop streaming indicator
             onAuthRequired();
             return;
           }
@@ -250,16 +363,18 @@ export const ChatArea = ({ selectedModel, systemPrompt, safeMode, isLandingMode 
 
       // Si upload (data URL), gérer image/PDF
       if (typeof content === 'string' && content.startsWith('data:')) {
+        // Fichier attaché: on attend une instruction utilisateur avant d'analyser
         setIsLoading(false);
         setIsAssistantStreaming(false);
         return;
       }
 
+      // Déclenchement prioritaire: génération d'image si le message le demande
+      // Utilise automatiquement le meilleur provider disponible (Runware si configuré, sinon DALL-E)
       const isUpload = typeof content === 'string' && (content.startsWith('data:') || content.startsWith('http'));
       const wantsImage = !isUpload && ImageService.isImageRequest(content);
       const wantsVideo = !isUpload && isVideoRequest(content);
       const wantsApp = !isUpload && AppGeneratorService.isAppGenerationRequest(content);
-      const { isDocRequest, docType, docPrompt } = isDocumentRequest(content);
       
       // Génération d'application complète
       if (wantsApp) {
@@ -274,12 +389,14 @@ export const ChatArea = ({ selectedModel, systemPrompt, safeMode, isLandingMode 
             model: "app-generator"
           };
           setMessages(prev => [...prev, tempMessage]);
-          setIsAssistantStreaming(false);
+          setIsAssistantStreaming(false); // Stop streaming for this specific message
 
           const generatedApp = await AppGeneratorService.generateApp(content);
           
+          // Supprimer le message temporaire
           setMessages(prev => prev.filter(m => m.id !== tempMessage.id));
           
+          // Créer le contenu web complet
           const webContent = `${generatedApp.html}\n<style>${generatedApp.css}</style>\n<script>${generatedApp.javascript}</script>`;
           
           const appMessage: Message = {
@@ -292,6 +409,7 @@ export const ChatArea = ({ selectedModel, systemPrompt, safeMode, isLandingMode 
           
           setMessages(prev => [...prev, appMessage]);
           
+          // Sauvegarder dans la base
           await supabase.from('messages').insert({
             conversation_id: convoId,
             role: 'assistant',
@@ -304,10 +422,11 @@ export const ChatArea = ({ selectedModel, systemPrompt, safeMode, isLandingMode 
             description: "Votre application complète est prête.",
           });
           
-          return;
+          return; // Arrêter le traitement pour la génération d'app
         } catch (error) {
           console.error("❌ Erreur génération app:", error);
           
+          // Supprimer le message temporaire en cas d'erreur
           setMessages(prev => prev.filter(m => m.id.startsWith('temp-')));
           
           const errorMessage: Message = {
@@ -397,28 +516,6 @@ export const ChatArea = ({ selectedModel, systemPrompt, safeMode, isLandingMode 
         return;
       }
 
-      // Redirection vers DocumentGenerator pour les requêtes de documents
-      if (isDocRequest) {
-        const assistantMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          content: `📝 J'ai détecté une demande de document (${docType}). Je vous redirige vers le Générateur de Documents pour une génération plus précise.`,
-          role: "assistant",
-          timestamp: new Date(),
-          model: selectedModel
-        };
-        setMessages(prev => [...prev, assistantMessage]);
-        await supabase.from('messages').insert({
-          conversation_id: convoId,
-          role: 'assistant',
-          content: assistantMessage.content,
-          model: selectedModel
-        });
-        setIsLoading(false);
-        setIsAssistantStreaming(false);
-        navigate(`/document-generator?prompt=${encodeURIComponent(docPrompt || content)}&type=${encodeURIComponent(docType || 'general')}`);
-        return;
-      }
-
       // Commandes spéciales désormais gérées par pages dédiées
       if (content.startsWith('/tts')) {
         const assistantMessage: Message = {
@@ -433,6 +530,37 @@ export const ChatArea = ({ selectedModel, systemPrompt, safeMode, isLandingMode 
           conversation_id: convoId,
           role: 'assistant',
           content: assistantMessage.content,
+          model: selectedModel
+        });
+        setIsLoading(false);
+        setIsAssistantStreaming(false);
+        return;
+      }
+
+      // Commandes de documents
+      const docMatch = content.trim().match(/^\/doc\s+(pdf|docx|pptx)\s+([\s\S]+)/i);
+      if (docMatch) {
+        const [, format, text] = docMatch;
+        let dataUrl = '';
+        if (format === 'pdf') {
+          dataUrl = await createPdfDataUrl(text);
+        } else if (format === 'docx') {
+          dataUrl = await createDocxDataUrl(text);
+        } else if (format === 'pptx') {
+          dataUrl = await createPptxDataUrl(text);
+        }
+        const assistantMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          content: dataUrl,
+          role: "assistant",
+          timestamp: new Date(),
+          model: selectedModel
+        };
+        setMessages(prev => [...prev, assistantMessage]);
+        await supabase.from('messages').insert({
+          conversation_id: convoId,
+          role: 'assistant',
+          content: dataUrl,
           model: selectedModel
         });
         setIsLoading(false);
@@ -564,7 +692,7 @@ export const ChatArea = ({ selectedModel, systemPrompt, safeMode, isLandingMode 
               isStreaming={isAssistantStreaming}
             />
           )}
-          {isLoading && !isAssistantStreaming && (
+          {isLoading && !isAssistantStreaming && ( // Show ModelStatusIndicator only if not actively streaming
             <ModelStatusIndicator 
               selectedModel={selectedModel}
               isLoading={isLoading}
