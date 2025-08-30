@@ -22,9 +22,14 @@ interface GenerationHistory {
 
 const contentTypes = [
   { value: 'instagram_post', label: 'Post Instagram' },
-  { value: 'product_description', label: 'Fiche Produit' },
-  { value: 'tweet', label: 'Tweet (X)' },
+  { value: 'facebook_post', label: 'Post Facebook' },
+  { value: 'tiktok_post', label: 'Post TikTok' },
   { value: 'linkedin_post', label: 'Post LinkedIn' },
+  { value: 'tweet', label: 'Tweet (X)' },
+  { value: 'product_description', label: 'Fiche Produit' },
+  { value: 'youtube_video_script', label: 'Script Vidéo YouTube' },
+  { value: 'facebook_video_script', label: 'Script Vidéo Facebook' },
+  { value: 'tiktok_video_script', label: 'Script Vidéo TikTok' },
 ];
 
 export default function SocialMediaStudio() {

@@ -18,6 +18,16 @@ const getPromptForContentType = (contentType: string, prompt: string, platform?:
       return `Crée un tweet percutant (moins de 280 caractères) sur : "${prompt}". Inclus un ou deux hashtags pertinents.`;
     case 'linkedin_post':
       return `Rédige un post LinkedIn professionnel sur le sujet : "${prompt}". Le post doit être structuré, informatif et encourager l'engagement.`;
+    case 'facebook_post':
+      return `Rédige une publication Facebook engageante sur le sujet : "${prompt}". Le post doit avoir un ton conversationnel, inclure des emojis pertinents, et se terminer par une question pour encourager les commentaires.`;
+    case 'tiktok_post':
+      return `Crée une description de post TikTok virale pour une vidéo sur : "${prompt}". La description doit être courte, percutante, inclure 3-5 hashtags tendance et une suggestion de son populaire.`;
+    case 'facebook_video_script':
+      return `Écris un script pour une courte vidéo Facebook (1-2 minutes) sur le sujet : "${prompt}". Le script doit être structuré avec des scènes, des indications visuelles et le dialogue ou la voix off.`;
+    case 'youtube_video_script':
+      return `Écris un script détaillé pour une vidéo YouTube (5-10 minutes) sur le sujet : "${prompt}". Le script doit inclure une introduction accrocheuse (hook), le contenu principal divisé en sections claires, et une conclusion avec un appel à l'action (like, subscribe).`;
+    case 'tiktok_video_script':
+      return `Crée un script pour une vidéo TikTok (15-30 secondes) sur le sujet : "${prompt}". Le script doit être très concis, visuellement dynamique, et suivre un format tendance (ex: "Point de vue:", "3 astuces pour..."). Inclus des suggestions de texte à l'écran.`;
     default:
       return `Génère du contenu pour les réseaux sociaux sur le sujet : "${prompt}". La plateforme cible est ${platform || 'générale'}.`;
   }
