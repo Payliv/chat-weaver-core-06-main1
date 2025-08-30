@@ -44,9 +44,13 @@ serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const reference = String(body?.reference || body?.ref || "");
     const planRaw = String(body?.plan || "").toLowerCase();
+    const durationRaw = String(body?.duration || "monthly"); // Default to monthly
     if (!reference) throw new Error("Missing payment reference");
-    const allowed = ["starter", "pro", "business"] as const;
-    if (!allowed.includes(planRaw as any)) throw new Error("Invalid plan");
+    const allowedPlans = ["starter", "pro", "business"] as const;
+    const allowedDurations = ["monthly", "threeMonthly", "twelveMonthly"] as const;
+
+    if (!allowedPlans.includes(planRaw as any)) throw new Error("Invalid plan");
+    if (!allowedDurations.includes(durationRaw as any)) throw new Error("Invalid duration");
 
     // Verify payment with Moneroo API
     const monerooResponse = await fetch(`https://api.moneroo.io/v1/payments/${reference}`, {
@@ -79,11 +83,17 @@ serve(async (req) => {
     if (metadata.plan !== planRaw) {
       throw new Error("Payment plan mismatch");
     }
+    if (metadata.duration !== durationRaw) { // Verify duration
+      throw new Error("Payment duration mismatch");
+    }
 
     const tier = planRaw === 'starter' ? 'Starter' : planRaw === 'pro' ? 'Pro' : 'Business';
 
-    // Calculate subscription end (stack 30 days on existing if active)
+    // Calculate subscription end based on duration
     const now = new Date();
+    let subscriptionMonths = 1; // Default to 1 month
+    if (durationRaw === 'threeMonthly') subscriptionMonths = 3;
+    if (durationRaw === 'twelveMonthly') subscriptionMonths = 12;
 
     const { data: existing, error: existingErr } = await supabaseService
       .from('subscribers')
@@ -101,7 +111,7 @@ serve(async (req) => {
       }
     }
     const end = new Date(base);
-    end.setDate(end.getDate() + 30);
+    end.setMonth(end.getMonth() + subscriptionMonths); // Add months to subscription end
 
     await supabaseService.from('subscribers').upsert({
       email: user.email,
@@ -112,7 +122,7 @@ serve(async (req) => {
       updated_at: now.toISOString(),
     }, { onConflict: 'email' });
 
-    log("Premium activated", { email: user.email, tier, end: end.toISOString(), reference });
+    log("Premium activated", { email: user.email, tier, duration: durationRaw, end: end.toISOString(), reference });
 
     return new Response(JSON.stringify({
       ok: true,

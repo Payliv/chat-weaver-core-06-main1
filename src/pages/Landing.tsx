@@ -1,10 +1,10 @@
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { ModelSelector } from "@/components/ModelSelector";
 import { ChatArea } from "@/components/ChatArea";
-import { useState } from "react";
 import { 
   MessageSquare, 
   Brain, 
@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Landing = () => {
   const navigate = useNavigate();
@@ -30,8 +31,9 @@ const Landing = () => {
   const [sttProvider, setSttProvider] = useState<'openai' | 'google'>("openai");
   const [ttsProvider, setTtsProvider] = useState<'openai' | 'google'>("openai");
   const [ttsVoice, setTtsVoice] = useState<string>("alloy");
-  const [personality, setPersonality] = useState<string>('default');
-  const [safeMode, setSafeMode] = useState<boolean>(true);
+  const [personality, setPersonality] = useState<string>(localStorage.getItem('personality') || 'default');
+  const [safeMode, setSafeMode] = useState<boolean>((localStorage.getItem('safeMode') || 'true') === 'true');
+  const [selectedDuration, setSelectedDuration] = useState<'monthly' | 'threeMonthly' | 'twelveMonthly'>('monthly');
 
   const personalities: Record<string, string> = {
     default: "Tu es un assistant utile et concis.",
@@ -40,11 +42,16 @@ const Landing = () => {
     cynic: "Tu es sarcastique mais utile, en restant professionnel.",
   };
 
-  // Plans d'abonnement exactement comme dans /billing
-  const plans = [
+  const PLAN_DURATIONS = [
+    { value: 'monthly', label: 'Mensuel', months: 1, discount: 0 },
+    { value: 'threeMonthly', label: '3 Mois (-15%)', months: 3, discount: 0.15 },
+    { value: 'twelveMonthly', label: '12 Mois (-30%)', months: 12, discount: 0.30 },
+  ];
+
+  const basePlans = [
     {
       id: 'Starter',
-      price: 750000, // 7500 FCFA
+      basePrice: 750000, // 7500 FCFA
       users: '1',
       models: '400+ modèles IA via OpenRouter : GPT-5, Claude 4, Llama 3.1 405B, Gemini Pro, Mistral Large + 50 providers',
       images: '10 images DALL·E 3 + Runware / mois',
@@ -57,7 +64,7 @@ const Landing = () => {
     },
     {
       id: 'Pro',
-      price: 2200000, // 22000 FCFA
+      basePrice: 2200000, // 22000 FCFA
       users: "Jusqu'à 5",
       models: '400+ modèles IA via OpenRouter : GPT-5, Claude 4, Llama 3.1 405B, Gemini Pro, Mistral Large + 50 providers',
       images: '50 images DALL·E 3 + Runware / mois',
@@ -70,7 +77,7 @@ const Landing = () => {
     },
     {
       id: 'Business',
-      price: 5500000, // 55000 FCFA
+      basePrice: 5500000, // 55000 FCFA
       users: "Jusqu'à 20",
       models: '400+ modèles IA via OpenRouter : GPT-5, Claude 4, Llama 3.1 405B, Gemini Pro, Mistral Large + 50 providers',
       images: 'Images DALL·E 3 + Runware illimité',
@@ -83,7 +90,7 @@ const Landing = () => {
     },
     {
       id: 'Enterprise',
-      price: 0, // Sur devis
+      basePrice: 0, // Sur devis
       users: 'Illimité',
       models: '400+ modèles IA via OpenRouter : GPT-5, Claude 4, Llama 3.1 405B, Gemini Pro, Mistral Large + 50 providers',
       images: 'Images DALL·E 3 + Runware illimité',
@@ -95,6 +102,18 @@ const Landing = () => {
       popular: false
     },
   ] as const;
+
+  const plans = useMemo(() => {
+    return basePlans.map(plan => {
+      const calculatedPrices: any = {};
+      PLAN_DURATIONS.forEach(duration => {
+        const totalBasePrice = plan.basePrice * duration.months;
+        const discountedPrice = totalBasePrice * (1 - duration.discount);
+        calculatedPrices[duration.value + 'Price'] = Math.round(discountedPrice);
+      });
+      return { ...plan, ...calculatedPrices };
+    });
+  }, []);
 
   // Minutes supplémentaires comme dans /billing
   const minutePackages = [
@@ -208,46 +227,70 @@ const Landing = () => {
                 <p className="text-muted-foreground text-sm">Accédez à toutes les fonctionnalités premium</p>
               </div>
 
+              {/* Duration Selector */}
+              <div className="flex justify-center mb-6">
+                <Tabs value={selectedDuration} onValueChange={(value) => setSelectedDuration(value as any)}>
+                  <TabsList className="grid w-full grid-cols-3 max-w-md">
+                    {PLAN_DURATIONS.map(duration => (
+                      <TabsTrigger key={duration.value} value={duration.value}>
+                        {duration.label}
+                      </TabsTrigger>
+                    ))}
+                  </TabsList>
+                </Tabs>
+              </div>
+
               {/* Real Pricing Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3 lg:gap-4">
-                {plans.map((plan, index) => (
-                  <Card key={plan.id} className={`hover:shadow-elegant transition-all duration-300 ${plan.popular ? 'border-primary shadow-elegant' : ''}`}>
-                    <CardContent className="p-3 lg:p-4 relative">
-                      {plan.popular && (
-                        <Badge className="absolute -top-2 left-1/2 transform -translate-x-1/2 bg-gradient-primary text-xs">
-                          Populaire
-                        </Badge>
-                      )}
-                      <div className={`flex items-center justify-between mb-2 lg:mb-3 ${plan.popular ? 'mt-2' : ''}`}>
-                        <div className="flex items-center gap-2">
-                          <plan.icon className="w-4 h-4 text-primary" />
-                          <h3 className="font-semibold text-sm lg:text-base">{plan.id}</h3>
+                {plans.map((plan, index) => {
+                  const priceKey = `${selectedDuration}Price` as keyof typeof plan;
+                  const currentPrice = plan[priceKey];
+                  const durationInfo = PLAN_DURATIONS.find(d => d.value === selectedDuration);
+
+                  return (
+                    <Card key={plan.id} className={`hover:shadow-elegant transition-all duration-300 ${plan.popular ? 'border-primary shadow-elegant' : ''}`}>
+                      <CardContent className="p-3 lg:p-4 relative">
+                        {plan.popular && (
+                          <Badge className="absolute -top-2 left-1/2 transform -translate-x-1/2 bg-gradient-primary text-xs">
+                            Populaire
+                          </Badge>
+                        )}
+                        {durationInfo?.discount > 0 && (
+                          <Badge className="absolute top-4 right-4 bg-green-500 text-white text-xs">
+                            -{Math.round(durationInfo.discount * 100)}%
+                          </Badge>
+                        )}
+                        <div className={`flex items-center justify-between mb-2 lg:mb-3 ${plan.popular ? 'mt-2' : ''}`}>
+                          <div className="flex items-center gap-2">
+                            <plan.icon className="w-4 h-4 text-primary" />
+                            <h3 className="font-semibold text-sm lg:text-base">{plan.id}</h3>
+                          </div>
+                          <Badge variant="outline" className="text-xs font-medium">
+                            {plan.price === 0 ? 'Sur devis' : `${(currentPrice / 100).toLocaleString()} FCFA${selectedDuration === 'monthly' ? '/mois' : `/${durationInfo?.months} mois`}`}
+                          </Badge>
                         </div>
-                        <Badge variant="outline" className="text-xs font-medium">
-                          {plan.price === 0 ? 'Sur devis' : `${(plan.price / 100).toLocaleString()} FCFA/mois`}
-                        </Badge>
-                      </div>
-                      
-                      <div className="space-y-1 text-xs text-muted-foreground mb-2 lg:mb-3">
-                        <div className="flex items-start gap-2"><Check className="w-3 h-3 text-primary mt-0.5 flex-shrink-0" /><span className="leading-tight">Utilisateurs: {plan.users}</span></div>
-                        <div className="flex items-start gap-2"><Check className="w-3 h-3 text-primary mt-0.5 flex-shrink-0" /><span className="leading-tight">Modèles IA: {plan.models}</span></div>
-                        <div className="flex items-start gap-2"><Check className="w-3 h-3 text-primary mt-0.5 flex-shrink-0" /><span className="leading-tight">{plan.images}</span></div>
-                        <div className="flex items-start gap-2"><Check className="w-3 h-3 text-primary mt-0.5 flex-shrink-0" /><span className="leading-tight">Text-to-Voice: {plan.tts}</span></div>
-                        <div className="flex items-start gap-2"><Check className="w-3 h-3 text-primary mt-0.5 flex-shrink-0" /><span className="leading-tight">{plan.minutes}</span></div>
-                        <div className="flex items-start gap-2 text-primary"><Sparkles className="w-3 h-3 mt-0.5 flex-shrink-0" /><span className="leading-tight font-medium">{plan.limits}</span></div>
-                      </div>
-                      
-                      <Button 
-                        onClick={() => navigate('/auth')}
-                        className={`w-full text-sm ${plan.popular ? 'bg-gradient-primary hover:shadow-glow' : ''}`}
-                        size="sm"
-                        variant={plan.popular ? "default" : "outline"}
-                      >
-                        {plan.id === 'Enterprise' ? 'Nous contacter' : 'Choisir ce plan'}
-                      </Button>
-                    </CardContent>
-                  </Card>
-                ))}
+                        
+                        <div className="space-y-1 text-xs text-muted-foreground mb-2 lg:mb-3">
+                          <div className="flex items-start gap-2"><Check className="w-3 h-3 text-primary mt-0.5 flex-shrink-0" /><span className="leading-tight">Utilisateurs: {plan.users}</span></div>
+                          <div className="flex items-start gap-2"><Check className="w-3 h-3 text-primary mt-0.5 flex-shrink-0" /><span className="leading-tight">Modèles IA: {plan.models}</span></div>
+                          <div className="flex items-start gap-2"><Check className="w-3 h-3 text-primary mt-0.5 flex-shrink-0" /><span className="leading-tight">{plan.images}</span></div>
+                          <div className="flex items-start gap-2"><Check className="w-3 h-3 text-primary mt-0.5 flex-shrink-0" /><span className="leading-tight">Text-to-Voice: {plan.tts}</span></div>
+                          <div className="flex items-start gap-2"><Check className="w-3 h-3 text-primary mt-0.5 flex-shrink-0" /><span className="leading-tight">{plan.minutes}</span></div>
+                          <div className="flex items-start gap-2 text-primary"><Sparkles className="w-3 h-3 mt-0.5 flex-shrink-0" /><span className="leading-tight font-medium">{plan.limits}</span></div>
+                        </div>
+                        
+                        <Button 
+                          onClick={() => navigate('/auth')}
+                          className={`w-full text-sm ${plan.popular ? 'bg-gradient-primary hover:shadow-glow' : ''}`}
+                          size="sm"
+                          variant={plan.popular ? "default" : "outline"}
+                        >
+                          {plan.id === 'Enterprise' ? 'Nous contacter' : 'Choisir ce plan'}
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
 
                 {/* Minutes supplémentaires section */}
                 <div className="sm:col-span-2 lg:col-span-1">

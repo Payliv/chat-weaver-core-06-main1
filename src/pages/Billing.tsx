@@ -6,6 +6,7 @@ import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, Clock, Zap, Shield, Star } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const setMeta = (name: string, content: string) => {
   let tag = document.querySelector(`meta[name="${name}"]`) as HTMLMetaElement | null;
@@ -60,10 +61,16 @@ const minutePackages: MinutePackage[] = [
   },
 ];
 
-const plans = [
+const PLAN_DURATIONS = [
+  { value: 'monthly', label: 'Mensuel', months: 1, discount: 0 },
+  { value: 'threeMonthly', label: '3 Mois (-15%)', months: 3, discount: 0.15 },
+  { value: 'twelveMonthly', label: '12 Mois (-30%)', months: 12, discount: 0.30 },
+];
+
+const basePlans = [
   {
     id: 'Starter',
-    price: 7500,
+    basePrice: 7500, // Monthly base price
     users: '1',
     models: 'GPT-5 + GPT-4.1 + O3 + O4-Mini + Deepseek V3 + Gemini Pro + Perplexity',
     images: '10 images / mois',
@@ -76,7 +83,7 @@ const plans = [
   },
   {
     id: 'Pro',
-    price: 22000,
+    basePrice: 22000,
     users: "Jusqu'à 5",
     models: 'GPT-5 + GPT-4.1 + O3 + O4-Mini + Deepseek V3 + Gemini Pro + Perplexity',
     images: '50 images / mois',
@@ -89,7 +96,7 @@ const plans = [
   },
   {
     id: 'Business',
-    price: 55000,
+    basePrice: 55000,
     users: "Jusqu'à 20",
     models: 'GPT-5 + GPT-4.1 + O3 + O4-Mini + Deepseek V3 + Gemini Pro + Perplexity',
     images: 'Illimité',
@@ -102,7 +109,7 @@ const plans = [
   },
   {
     id: 'Enterprise',
-    price: 0,
+    basePrice: 0, // Special case for enterprise
     users: 'Illimité',
     models: 'GPT-5 + GPT-4.1 + O3 + O4-Mini + Deepseek V3 + Gemini Pro + Perplexity',
     images: 'Illimité',
@@ -125,6 +132,19 @@ const Billing = () => {
     subscription_end: null,
     minutes_balance: 0
   });
+  const [selectedDuration, setSelectedDuration] = useState<'monthly' | 'threeMonthly' | 'twelveMonthly'>('monthly');
+
+  const plans = useMemo(() => {
+    return basePlans.map(plan => {
+      const calculatedPrices: any = {};
+      PLAN_DURATIONS.forEach(duration => {
+        const totalBasePrice = plan.basePrice * duration.months;
+        const discountedPrice = totalBasePrice * (1 - duration.discount);
+        calculatedPrices[duration.value + 'Price'] = Math.round(discountedPrice);
+      });
+      return { ...plan, ...calculatedPrices };
+    });
+  }, []);
 
   const currentPlanKey = useMemo(() => {
     const tier = (sub.subscription_tier || '').toLowerCase();
@@ -151,7 +171,7 @@ const Billing = () => {
       }
       setLoading(true);
       const { data, error } = await supabase.functions.invoke('moneroo-init', {
-        body: { plan: planKey }
+        body: { plan: planKey, duration: selectedDuration }
       });
       if (error) throw error;
       if (data?.url) {
@@ -199,6 +219,7 @@ const Billing = () => {
     const minutes = params.get('minutes');
     const ref = params.get('ref') || params.get('reference') || params.get('moneroo_ref');
     const plan = params.get('plan');
+    const duration = params.get('duration');
     
     if (paymentId && paymentStatus) {
       if (paymentStatus === 'success' || status === 'success') {
@@ -215,8 +236,9 @@ const Billing = () => {
         } else {
           // Subscription purchase verification
           const planFromUrl = plan || 'starter';
+          const durationFromUrl = (duration || 'monthly') as 'monthly' | 'threeMonthly' | 'twelveMonthly';
           const { error } = await supabase.functions.invoke('moneroo-verify', {
-            body: { reference: paymentId, plan: planFromUrl }
+            body: { reference: paymentId, plan: planFromUrl, duration: durationFromUrl }
           });
           if (error) {
             toast({ title: 'Vérification échouée', description: error.message, variant: 'destructive' });
@@ -234,7 +256,7 @@ const Billing = () => {
       
       // Clean URL parameters
       const url = new URL(window.location.href);
-      ['status', 'paymentId', 'paymentStatus', 'plan', 'minutes'].forEach(param => {
+      ['status', 'paymentId', 'paymentStatus', 'plan', 'minutes', 'duration'].forEach(param => {
         url.searchParams.delete(param);
       });
       window.history.replaceState({}, '', url.pathname + (url.search ? `?${url.searchParams.toString()}` : ''));
@@ -242,8 +264,9 @@ const Billing = () => {
     
     // Keep backward compatibility with old ref/plan parameters
     else if (ref && plan) {
+      const durationFromUrl = (duration || 'monthly') as 'monthly' | 'threeMonthly' | 'twelveMonthly';
       const { error } = await supabase.functions.invoke('moneroo-verify', {
-        body: { reference: ref, plan }
+        body: { reference: ref, plan, duration: durationFromUrl }
       });
       if (error) {
         toast({ title: 'Vérification échouée', description: error.message, variant: 'destructive' });
@@ -252,7 +275,7 @@ const Billing = () => {
       }
       
       const url = new URL(window.location.href);
-      ['ref', 'reference', 'moneroo_ref', 'plan'].forEach(param => {
+      ['ref', 'reference', 'moneroo_ref', 'plan', 'duration'].forEach(param => {
         url.searchParams.delete(param);
       });
       window.history.replaceState({}, '', url.pathname + (url.search ? `?${url.searchParams.toString()}` : ''));
@@ -329,10 +352,26 @@ const Billing = () => {
             <p className="text-muted-foreground">Accédez à toutes les fonctionnalités premium</p>
           </div>
           
+          {/* Duration Selector */}
+          <div className="flex justify-center mb-6">
+            <Tabs value={selectedDuration} onValueChange={(value) => setSelectedDuration(value as any)}>
+              <TabsList className="grid w-full grid-cols-3 max-w-md">
+                {PLAN_DURATIONS.map(duration => (
+                  <TabsTrigger key={duration.value} value={duration.value}>
+                    {duration.label}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
+          </div>
+
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {plans.map((plan) => {
               const isCurrent = currentPlanKey === plan.key;
               const IconComponent = plan.icon;
+              const priceKey = `${selectedDuration}Price` as keyof typeof plan;
+              const currentPrice = plan[priceKey];
+              const durationInfo = PLAN_DURATIONS.find(d => d.value === selectedDuration);
               
               return (
                 <Card key={plan.id} className={`relative p-6 transition-all duration-300 hover:shadow-lg ${
@@ -341,6 +380,11 @@ const Billing = () => {
                   {plan.popular && (
                     <Badge className="absolute -top-2 left-1/2 -translate-x-1/2 bg-primary">
                       Populaire
+                    </Badge>
+                  )}
+                  {durationInfo?.discount > 0 && (
+                    <Badge className="absolute top-4 right-4 bg-green-500 text-white">
+                      -{Math.round(durationInfo.discount * 100)}%
                     </Badge>
                   )}
                   
@@ -360,9 +404,16 @@ const Billing = () => {
                     ) : (
                       <>
                         <div className="text-3xl font-bold text-foreground">
-                          {plan.price.toLocaleString()} FCFA
+                          {currentPrice.toLocaleString()} FCFA
                         </div>
-                        <div className="text-sm text-muted-foreground">/mois</div>
+                        <div className="text-sm text-muted-foreground">
+                          {selectedDuration === 'monthly' ? '/mois' : `/${durationInfo?.months} mois`}
+                        </div>
+                        {durationInfo?.discount > 0 && (
+                          <p className="text-xs text-muted-foreground line-through">
+                            {(plan.basePrice * durationInfo.months).toLocaleString()} FCFA
+                          </p>
+                        )}
                       </>
                     )}
                   </div>

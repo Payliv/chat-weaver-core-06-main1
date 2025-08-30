@@ -35,21 +35,37 @@ serve(async (req) => {
     // Parse body
     const body = await req.json().catch(() => ({}));
     const planRaw = String(body?.plan || "").toLowerCase();
-    const allowed = ["starter", "pro", "business"] as const;
-    if (!allowed.includes(planRaw as any)) throw new Error("Invalid plan");
+    const durationRaw = String(body?.duration || "monthly"); // Default to monthly
+    const allowedPlans = ["starter", "pro", "business"] as const;
+    const allowedDurations = ["monthly", "threeMonthly", "twelveMonthly"] as const;
+
+    if (!allowedPlans.includes(planRaw as any)) throw new Error("Invalid plan");
+    if (!allowedDurations.includes(durationRaw as any)) throw new Error("Invalid duration");
 
     const monerooKey = Deno.env.get("MONEROO_SECRET_KEY");
     if (!monerooKey) throw new Error("MONEROO_SECRET_KEY is not set");
 
-    // Get plan pricing
+    // Define plan pricing with discounts
     const planPricing = {
-      starter: { amount: 7500, currency: "XOF" },
-      pro: { amount: 22000, currency: "XOF" },
-      business: { amount: 55000, currency: "XOF" }
+      starter: {
+        monthly: { amount: 7500, name: "Starter (Mensuel)" },
+        threeMonthly: { amount: Math.round(7500 * 3 * 0.85), name: "Starter (3 Mois)" }, // 15% discount
+        twelveMonthly: { amount: Math.round(7500 * 12 * 0.70), name: "Starter (12 Mois)" }, // 30% discount
+      },
+      pro: {
+        monthly: { amount: 22000, name: "Pro (Mensuel)" },
+        threeMonthly: { amount: Math.round(22000 * 3 * 0.85), name: "Pro (3 Mois)" },
+        twelveMonthly: { amount: Math.round(22000 * 12 * 0.70), name: "Pro (12 Mois)" },
+      },
+      business: {
+        monthly: { amount: 55000, name: "Business (Mensuel)" },
+        threeMonthly: { amount: Math.round(55000 * 3 * 0.85), name: "Business (3 Mois)" },
+        twelveMonthly: { amount: Math.round(55000 * 12 * 0.70), name: "Business (12 Mois)" },
+      }
     };
 
-    const plan = planPricing[planRaw as keyof typeof planPricing];
-    if (!plan) throw new Error("Invalid plan selected");
+    const selectedPlan = planPricing[planRaw as keyof typeof planPricing]?.[durationRaw as keyof typeof planPricing['starter']];
+    if (!selectedPlan) throw new Error("Invalid plan or duration selected");
 
     const origin = req.headers.get("origin") || "http://localhost:3000";
     const returnUrl = `${origin}/billing`;
@@ -63,9 +79,9 @@ serve(async (req) => {
         "Accept": "application/json"
       },
       body: JSON.stringify({
-        amount: plan.amount,
-        currency: plan.currency,
-        description: `Abonnement ${planRaw.charAt(0).toUpperCase() + planRaw.slice(1)} - Chatelix`,
+        amount: selectedPlan.amount,
+        currency: "XOF", // Assuming XOF as currency
+        description: `Abonnement ${selectedPlan.name} - Chatelix`,
         customer: {
           email: user.email,
           first_name: user.user_metadata?.first_name || "User",
@@ -75,6 +91,7 @@ serve(async (req) => {
         metadata: {
           user_id: user.id,
           plan: planRaw,
+          duration: durationRaw, // Add duration to metadata
           email: user.email
         }
       })
@@ -87,7 +104,7 @@ serve(async (req) => {
     }
 
     const monerooData = await monerooResponse.json();
-    log("Payment initialized", { paymentId: monerooData.data?.id, plan: planRaw });
+    log("Payment initialized", { paymentId: monerooData.data?.id, plan: planRaw, duration: durationRaw });
 
     return new Response(JSON.stringify({ 
       url: monerooData.data?.checkout_url,
