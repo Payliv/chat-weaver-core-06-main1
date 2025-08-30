@@ -1,9 +1,13 @@
-/// <reference lib="deno.ns" />
-/// <reference types="https://deno.land/std@0.190.0/http/server.ts" />
-/// <reference types="https://esm.sh/@supabase/supabase-js@2.45.0" />
+// Déclaration globale de l'objet Deno pour la reconnaissance TypeScript
+declare const Deno: {
+  env: {
+    get(key: string): string | undefined;
+  };
+};
 
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient, SupabaseClient, User } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+// @ts-ignore
+import { serve } from "https://deno.land/std@0.224.0/http/server.ts"; // Version Deno std lib mise à jour
+import { createClient, SupabaseClient, User } from "https://esm.sh/@supabase/supabase-js@2.102.1?dts"; // Version Supabase JS mise à jour
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -39,32 +43,45 @@ const authenticateUser = async (req: Request, supabaseAnon: SupabaseClient): Pro
 };
 
 const getSubscriptionInfo = async (supabaseService: SupabaseClient, user: User) => {
-  const { data: subscription } = await supabaseService
+  const { data: subscriber, error: subError } = await supabaseService
     .from('subscribers')
     .select('subscription_tier, subscribed')
-    .eq('email', user.email)
-    .single();
+    .eq('user_id', user.id) // Use user.id for consistency with other functions
+    .maybeSingle(); // Use maybeSingle as subscriber might not exist yet
 
-  const getTeamLimit = (tier: string | null, subscribed: boolean) => {
-    if (!subscribed || !tier) return 1;
-    if (tier.toLowerCase().includes('pro')) return 5;
-    if (tier.toLowerCase().includes('business')) return 20;
-    if (tier.toLowerCase().includes('enterprise')) return 999;
-    return 1;
-  };
+  if (subError) {
+    console.error('Error fetching subscriber info:', subError);
+    // Fallback to default free tier limits on error
+    return {
+      subscription: null,
+      teamLimit: 1,
+      maxTeams: 1,
+    };
+  }
 
-  const getMaxTeams = (tier: string | null, subscribed: boolean) => {
-    if (!subscribed || !tier) return 1;
-    if (tier.toLowerCase().includes('pro')) return 5;
-    if (tier.toLowerCase().includes('business')) return 20;
-    if (tier.toLowerCase().includes('enterprise')) return 999;
-    return 1;
-  };
+  const isSubscribed = subscriber?.subscribed ?? false;
+  const tier = subscriber?.subscription_tier?.toLowerCase() ?? 'free';
+
+  let teamLimit = 1; // Default for free tier
+  let maxTeams = 1; // Default for free tier
+
+  if (isSubscribed) {
+    if (tier.includes('pro')) {
+      teamLimit = 5;
+      maxTeams = 5;
+    } else if (tier.includes('business')) {
+      teamLimit = 20;
+      maxTeams = 20;
+    } else if (tier.includes('enterprise')) {
+      teamLimit = 999; // Effectively unlimited
+      maxTeams = 999; // Effectively unlimited
+    }
+  }
 
   return {
-    subscription,
-    teamLimit: getTeamLimit(subscription?.subscription_tier, subscription?.subscribed),
-    maxTeams: getMaxTeams(subscription?.subscription_tier, subscription?.subscribed),
+    subscription: subscriber,
+    teamLimit,
+    maxTeams,
   };
 };
 
