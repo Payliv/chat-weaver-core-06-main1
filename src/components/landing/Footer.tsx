@@ -1,7 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { Mail, Twitter } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export const Footer = () => {
+  const navigate = useNavigate();
+
   return (
     <footer className="bg-secondary/20 border-t border-border py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
@@ -48,8 +51,8 @@ export const Footer = () => {
           <div>
             <h4 className="font-semibold mb-4">Légal</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><a href="#" className="hover:text-foreground transition-colors">Mentions légales</a></li>
-              <li><a href="#" className="hover:text-foreground transition-colors">Politique de confidentialité</a></li>
+              <li><a href="/legal-notice" onClick={(e) => { e.preventDefault(); navigate('/legal-notice'); }} className="hover:text-foreground transition-colors">Mentions légales</a></li>
+              <li><a href="/privacy-policy" onClick={(e) => { e.preventDefault(); navigate('/privacy-policy'); }} className="hover:text-foreground transition-colors">Politique de confidentialité</a></li>
               <li><a href="#" className="hover:text-foreground transition-colors">Support</a></li>
               <li><a href="#" className="hover:text-foreground transition-colors">Centre d'aide</a></li>
             </ul>
@@ -58,7 +61,7 @@ export const Footer = () => {
 
         <div className="border-t border-border mt-12 pt-8 text-center">
           <p className="text-sm text-muted-foreground">
-            © 2024 Chatelix. Conçu avec ❤️ par{" "}
+            © 2025 Chatelix. Conçu avec ❤️ par{" "}
             <a 
               href="https://gstartup.pro" 
               target="_blank" 
