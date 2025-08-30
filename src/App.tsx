@@ -22,6 +22,7 @@ import SpeechToText from "./pages/SpeechToText";
 import CodeStudio from "./pages/CodeStudio";
 import ModernCodeStudio from "./components/modern-code-studio/ModernCodeStudio";
 import DocumentStudio from "./pages/DocumentStudio"; // Import the new DocumentStudio
+import DocumentGenerator from "./pages/DocumentGenerator"; // Import the new DocumentGenerator page
 
 const App = () => (
   <TooltipProvider>
@@ -44,7 +45,8 @@ const App = () => (
         <Route path="/tts-studio" element={<TTSStudio />} />
         <Route path="/code-studio" element={<ModernCodeStudio />} />
         <Route path="/code-studio-legacy" element={<CodeStudio />} />
-        <Route path="/documents" element={<DocumentStudio />} /> {/* Use the new DocumentStudio */}
+        <Route path="/documents" element={<DocumentStudio />} />
+        <Route path="/document-generator" element={<DocumentGenerator />} /> {/* New route for DocumentGenerator */}
         <Route path="/billing" element={<Billing />} />
         <Route path="/super-admin" element={<SuperAdminDashboard />} />
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

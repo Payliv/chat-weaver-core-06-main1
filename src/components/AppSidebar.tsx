@@ -234,22 +234,6 @@ export function AppSidebar({ isLandingMode = false, onAuthRequired }: AppSidebar
                 </SidebarMenuButton>
               </SidebarMenuItem>
               
-              {/* Générateur Vidéo - Temporairement masqué
-              <SidebarMenuItem>
-                <SidebarMenuButton onClick={toggleVideoGenerator} className="w-full justify-start text-muted-foreground hover:text-foreground">
-                  <Video className="w-4 h-4" />
-                  {!isCollapsed && <span className="ml-2">Générateur Vidéo</span>}
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              */}
-              
-              <SidebarMenuItem>
-                <SidebarMenuButton onClick={() => handleNavigation('/speech-to-text')} className="w-full justify-start text-muted-foreground hover:text-foreground">
-                  <Languages className="w-4 h-4" />
-                  {!isCollapsed && <span className="ml-2">Speech-to-Text</span>}
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              
               {false && ( // Masquer l'entrée Code Studio
                 <SidebarMenuItem>
                   <SidebarMenuButton onClick={() => handleNavigation('/code-studio')} className="w-full justify-start text-muted-foreground hover:text-foreground">
@@ -258,6 +242,21 @@ export function AppSidebar({ isLandingMode = false, onAuthRequired }: AppSidebar
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               )}
+              
+              <SidebarMenuItem>
+                <SidebarMenuButton onClick={() => handleNavigation('/speech-to-text')} className="w-full justify-start text-muted-foreground hover:text-foreground">
+                  <Languages className="w-4 h-4" />
+                  {!isCollapsed && <span className="ml-2">Speech-to-Text</span>}
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              {/* New Document Generator Link */}
+              <SidebarMenuItem>
+                <SidebarMenuButton onClick={() => handleNavigation('/document-generator')} className="w-full justify-start text-muted-foreground hover:text-foreground">
+                  <FileText className="w-4 h-4" />
+                  {!isCollapsed && <span className="ml-2">Générateur de Documents</span>}
+                </SidebarMenuButton>
+              </SidebarMenuItem>
               
               <SidebarMenuItem>
                 <SidebarMenuButton onClick={() => handleNavigation('/documents')} className="w-full justify-start text-muted-foreground hover:text-foreground">
