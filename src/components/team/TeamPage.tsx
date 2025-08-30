@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
-import { Users, UserPlus, History, CheckCircle, ArrowLeft, Shield, RefreshCw, Calendar } from 'lucide-react';
+import { Users, UserPlus, History, CheckCircle, ArrowLeft, Shield, RefreshCw, Calendar, XCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { TeamCard } from '@/components/team/TeamCard';
 import type { Team, TeamHistoryItem } from '@/components/team/types';
@@ -38,10 +38,16 @@ export default function TeamPage() {
   const [teamHistory, setTeamHistory] = useState<TeamHistoryItem[]>([]);
   const [showHistoryDialog, setShowHistoryDialog] = useState(false);
   const [loadingHistory, setLoadingHistory] = useState(false);
+  const [hasLoadedTeamsOnce, setHasLoadedTeamsOnce] = useState(false);
+  const [teamLoadError, setTeamLoadError] = useState<string | null>(null);
+  const [isCreatingDefaultTeam, setIsCreatingDefaultTeam] = useState(false);
   
   const { toast } = useToast();
 
   const createDefaultTeamForUser = useCallback(async () => {
+    if (isCreatingDefaultTeam) return;
+    setIsCreatingDefaultTeam(true);
+    setTeamLoadError(null); // Clear previous errors
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
@@ -65,17 +71,21 @@ export default function TeamPage() {
       await loadTeams(); // Reload teams to show the new one
     } catch (error: any) {
       console.error('Error creating default team:', error);
+      setTeamLoadError(error.message || "Impossible de créer l'équipe par défaut.");
       toast({
         title: "Erreur",
         description: error.message || "Impossible de créer l'équipe par défaut.",
         variant: "destructive"
       });
+    } finally {
+      setIsCreatingDefaultTeam(false);
     }
-  }, [toast]); // Add toast to dependencies
+  }, [isCreatingDefaultTeam, toast]);
 
   const loadTeams = useCallback(async () => {
     try {
       setLoading(true);
+      setTeamLoadError(null); // Clear previous errors
       const { data, error } = await supabase.functions.invoke('team-management', { body: { action: 'get_teams' } });
       if (error) throw new Error(error.message || 'Erreur chargement');
       const teamData: TeamData = data;
@@ -83,16 +93,20 @@ export default function TeamPage() {
       setTeamLimit(teamData.teamLimit || 1);
       setSubscription(teamData.subscription || 'Gratuit');
 
-      // If no teams found, create a default one
-      if ((teamData.teams || []).length === 0) {
-        await createDefaultTeamForUser();
+      if (!hasLoadedTeamsOnce) { // Only attempt to create default team once
+        setHasLoadedTeamsOnce(true);
+        if ((teamData.teams || []).length === 0) {
+          await createDefaultTeamForUser();
+        }
       }
     } catch (error: any) {
+      console.error('Error loading teams:', error); // Log the actual error
+      setTeamLoadError(error.message || "Impossible de charger les équipes.");
       toast({ title: "Erreur", description: error.message, variant: "destructive" });
     } finally {
       setLoading(false);
     }
-  }, [createDefaultTeamForUser, toast]); // Add createDefaultTeamForUser and toast to dependencies
+  }, [createDefaultTeamForUser, toast, hasLoadedTeamsOnce]);
 
   useEffect(() => {
     document.title = 'Gestion d\'équipe - ChAtélix';
@@ -164,9 +178,6 @@ export default function TeamPage() {
     }
   };
 
-  // No explicit team creation button needed, as a default team is created automatically
-  // The user will always have at least one team to manage.
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background">
       <header className="border-b bg-card/50 backdrop-blur-sm">
@@ -185,8 +196,8 @@ export default function TeamPage() {
               </div>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={loadTeams} disabled={loading} className="flex items-center gap-2">
-                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} /> Actualiser
+              <Button variant="outline" size="sm" onClick={loadTeams} disabled={loading || isCreatingDefaultTeam} className="flex items-center gap-2">
+                <RefreshCw className={`h-4 w-4 ${loading || isCreatingDefaultTeam ? 'animate-spin' : ''}`} /> Actualiser
               </Button>
             </div>
           </div>
@@ -208,11 +219,20 @@ export default function TeamPage() {
         )}
 
         <div className="space-y-6">
-          {teams.length === 0 && !loading ? (
+          {teams.length === 0 && !loading && !teamLoadError ? (
             <Card className="p-8 text-center">
               <div className="p-4 mx-auto w-fit rounded-full bg-muted/50 mb-4"><Users className="h-8 w-8 text-muted-foreground" /></div>
               <h3 className="text-lg font-semibold mb-2">Chargement de votre équipe...</h3>
               <p className="text-muted-foreground mb-4">Une équipe par défaut est en cours de création pour vous.</p>
+            </Card>
+          ) : teamLoadError ? (
+            <Card className="p-8 text-center bg-red-50 border-red-200">
+              <div className="p-4 mx-auto w-fit rounded-full bg-red-100 mb-4"><XCircle className="h-8 w-8 text-red-600" /></div>
+              <h3 className="text-lg font-semibold mb-2">Erreur de chargement des équipes</h3>
+              <p className="text-muted-foreground mb-4">{teamLoadError}</p>
+              <Button onClick={loadTeams} variant="outline" className="flex items-center gap-2">
+                <RefreshCw className="h-4 w-4" /> Réessayer
+              </Button>
             </Card>
           ) : (
             teams.map((team) => (
