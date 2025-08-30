@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Clock, Zap, Shield, Star } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { BillingHeader } from '@/components/billing/BillingHeader';
+import { CurrentSubscriptionCard } from '@/components/billing/CurrentSubscriptionCard';
+import { SubscriptionPlansSection } from '@/components/billing/SubscriptionPlansSection';
+import { MinutePackagesSection } from '@/components/billing/MinutePackagesSection';
+import { BillingActions } from '@/components/billing/BillingActions';
+import { Zap, Shield, Star } from "lucide-react"; // Icons for plans
 
 const setMeta = (name: string, content: string) => {
   let tag = document.querySelector(`meta[name="${name}"]`) as HTMLMetaElement | null;
@@ -33,35 +34,31 @@ interface MinutePackage {
   popular?: boolean;
 }
 
-const minutePackages: MinutePackage[] = [
-  {
-    id: "50",
-    minutes: 50,
-    price: 2500,
-    pricePerMinute: 50,
-  },
-  {
-    id: "100",
-    minutes: 100,
-    price: 4500,
-    pricePerMinute: 45,
-    popular: true,
-  },
-  {
-    id: "300",
-    minutes: 300,
-    price: 12000,
-    pricePerMinute: 40,
-  },
-  {
-    id: "500",
-    minutes: 500,
-    price: 18000,
-    pricePerMinute: 36,
-  },
-];
+interface PlanDuration {
+  value: 'monthly' | 'threeMonthly' | 'twelveMonthly';
+  label: string;
+  months: number;
+  discount: number;
+}
 
-const PLAN_DURATIONS = [
+interface Plan {
+  id: string;
+  basePrice: number;
+  users: string;
+  models: string;
+  images: string;
+  tts: string;
+  minutes: string;
+  limits: string;
+  key: string;
+  icon: React.ElementType;
+  popular: boolean;
+  monthlyPrice: number;
+  threeMonthlyPrice: number;
+  twelveMonthlyPrice: number;
+}
+
+const PLAN_DURATIONS: PlanDuration[] = [
   { value: 'monthly', label: 'Mensuel', months: 1, discount: 0 },
   { value: 'threeMonthly', label: '3 Mois (-15%)', months: 3, discount: 0.15 },
   { value: 'twelveMonthly', label: '12 Mois (-30%)', months: 12, discount: 0.30 },
@@ -122,6 +119,34 @@ const basePlans = [
   },
 ] as const;
 
+const minutePackages: MinutePackage[] = [
+  {
+    id: "50",
+    minutes: 50,
+    price: 2500,
+    pricePerMinute: 50,
+  },
+  {
+    id: "100",
+    minutes: 100,
+    price: 4500,
+    pricePerMinute: 45,
+    popular: true,
+  },
+  {
+    id: "300",
+    minutes: 300,
+    price: 12000,
+    pricePerMinute: 40,
+  },
+  {
+    id: "500",
+    minutes: 500,
+    price: 18000,
+    pricePerMinute: 36,
+  },
+];
+
 const Billing = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -134,7 +159,7 @@ const Billing = () => {
   });
   const [selectedDuration, setSelectedDuration] = useState<'monthly' | 'threeMonthly' | 'twelveMonthly'>('monthly');
 
-  const plans = useMemo(() => {
+  const plans: Plan[] = useMemo(() => {
     return basePlans.map(plan => {
       const calculatedPrices: any = {};
       PLAN_DURATIONS.forEach(duration => {
@@ -294,236 +319,36 @@ const Billing = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background">
-      {/* Header with back button */}
-      <header className="border-b bg-card/50 backdrop-blur-sm">
-        <div className="container mx-auto max-w-7xl px-6 py-4">
-          <div className="flex items-center gap-4">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => navigate("/app")}
-              className="flex items-center gap-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Retour
-            </Button>
-            <div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-                Abonnements Chatelix
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                Choisissez le plan qui vous convient
-              </p>
-            </div>
-          </div>
-        </div>
-      </header>
+      <BillingHeader 
+        title="Abonnements Chatelix" 
+        description="Choisissez le plan qui vous convient" 
+      />
 
       <main className="container mx-auto max-w-7xl px-6 py-8 space-y-12">
-        {/* Current subscription status */}
-        {sub.subscribed && (
-          <Card className="p-6 bg-gradient-to-r from-primary/10 to-secondary/10 border border-primary/20">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-semibold text-foreground">Plan actuel</h2>
-                <p className="text-2xl font-bold text-primary">{sub.subscription_tier || '—'}</p>
-                {sub.subscription_end && (
-                  <p className="text-sm text-muted-foreground">
-                    Renouvellement le {new Date(sub.subscription_end).toLocaleDateString()}
-                  </p>
-                )}
-              </div>
-              <div className="text-right">
-                <p className="text-sm text-muted-foreground">Minutes disponibles</p>
-                <p className="text-3xl font-bold text-secondary">{sub.minutes_balance || 0}</p>
-                <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                  <Clock className="h-3 w-3" />
-                  minutes TTS
-                </div>
-              </div>
-            </div>
-          </Card>
-        )}
+        <CurrentSubscriptionCard sub={sub} />
 
-        {/* Subscription Plans */}
-        <section className="space-y-6">
-          <div className="text-center">
-            <h2 className="text-3xl font-bold text-foreground mb-2">Plans d'abonnement</h2>
-            <p className="text-muted-foreground">Accédez à toutes les fonctionnalités premium</p>
-          </div>
-          
-          {/* Duration Selector */}
-          <div className="flex justify-center mb-6">
-            <Tabs value={selectedDuration} onValueChange={(value) => setSelectedDuration(value as any)}>
-              <TabsList className="grid w-full grid-cols-3 max-w-md">
-                {PLAN_DURATIONS.map(duration => (
-                  <TabsTrigger key={duration.value} value={duration.value}>
-                    {duration.label}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-            </Tabs>
-          </div>
+        <SubscriptionPlansSection
+          plans={plans}
+          selectedDuration={selectedDuration}
+          onDurationChange={setSelectedDuration}
+          startCheckout={startCheckout}
+          loading={loading}
+          currentPlanKey={currentPlanKey}
+          sub={sub}
+          PLAN_DURATIONS={PLAN_DURATIONS}
+        />
 
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {plans.map((plan) => {
-              const isCurrent = currentPlanKey === plan.key;
-              const IconComponent = plan.icon;
-              const priceKey = `${selectedDuration}Price` as keyof typeof plan;
-              const currentPrice = plan[priceKey];
-              const durationInfo = PLAN_DURATIONS.find(d => d.value === selectedDuration);
-              
-              return (
-                <Card key={plan.id} className={`relative p-6 transition-all duration-300 hover:shadow-lg ${
-                  plan.popular ? 'ring-2 ring-primary shadow-primary/20' : ''
-                } ${isCurrent ? 'bg-primary/5 border-primary' : 'bg-card hover:bg-card/80'}`}>
-                  {plan.popular && (
-                    <Badge className="absolute -top-2 left-1/2 -translate-x-1/2 bg-primary">
-                      Populaire
-                    </Badge>
-                  )}
-                  {durationInfo?.discount > 0 && (
-                    <Badge className="absolute top-4 right-4 bg-green-500 text-white">
-                      -{Math.round(durationInfo.discount * 100)}%
-                    </Badge>
-                  )}
-                  
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="p-2 rounded-lg bg-primary/10">
-                      <IconComponent className="h-6 w-6 text-primary" />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-bold text-foreground">{plan.id}</h3>
-                      {isCurrent && <Badge variant="secondary" className="mt-1">Actuel</Badge>}
-                    </div>
-                  </div>
-                  
-                  <div className="mb-6">
-                    {plan.key === 'enterprise' ? (
-                      <div className="text-2xl font-bold text-foreground">Sur devis</div>
-                    ) : (
-                      <>
-                        <div className="text-3xl font-bold text-foreground">
-                          {currentPrice.toLocaleString()} FCFA
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          {selectedDuration === 'monthly' ? '/mois' : `/${durationInfo?.months} mois`}
-                        </div>
-                        {durationInfo?.discount > 0 && (
-                          <p className="text-xs text-muted-foreground line-through">
-                            {(plan.basePrice * durationInfo.months).toLocaleString()} FCFA
-                          </p>
-                        )}
-                      </>
-                    )}
-                  </div>
-                  
-                  <ul className="space-y-3 mb-8 text-sm">
-                    <li className="flex items-start gap-2">
-                      <div className="w-1 h-1 rounded-full bg-primary mt-2 flex-shrink-0"></div>
-                      <span>Utilisateurs: {plan.users}</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <div className="w-1 h-1 rounded-full bg-primary mt-2 flex-shrink-0"></div>
-                      <span>Modèles IA: {plan.models}</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <div className="w-1 h-1 rounded-full bg-primary mt-2 flex-shrink-0"></div>
-                      <span>Images DALL·E 3: {plan.images}</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <div className="w-1 h-1 rounded-full bg-primary mt-2 flex-shrink-0"></div>
-                      <span>Text-to-Voice: {plan.tts}</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <div className="w-1 h-1 rounded-full bg-primary mt-2 flex-shrink-0"></div>
-                      <span>Minutes TTS: {plan.minutes}</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <div className="w-1 h-1 rounded-full bg-primary mt-2 flex-shrink-0"></div>
-                      <span>{plan.limits}</span>
-                    </li>
-                  </ul>
-                  
-                  <Button
-                    disabled={loading || isCurrent}
-                    onClick={() => startCheckout(plan.key)}
-                    className="w-full"
-                    variant={plan.popular ? "default" : "outline"}
-                  >
-                    {plan.key === 'enterprise' 
-                      ? 'Nous contacter' 
-                      : isCurrent 
-                        ? 'Plan actuel' 
-                        : sub.subscribed 
-                          ? 'Mettre à niveau' 
-                          : 'Choisir ce plan'
-                    }
-                  </Button>
-                </Card>
-              );
-            })}
-          </div>
-        </section>
+        <MinutePackagesSection
+          minutePackages={minutePackages}
+          purchaseMinutes={purchaseMinutes}
+          minutesLoading={minutesLoading}
+        />
 
-        {/* Minutes Supplémentaires */}
-        <section className="space-y-6">
-          <div className="text-center">
-            <h2 className="text-3xl font-bold text-foreground mb-2">Minutes supplémentaires</h2>
-            <p className="text-muted-foreground">Achetez des minutes TTS à la demande</p>
-          </div>
-          
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {minutePackages.map((pkg) => (
-              <Card key={pkg.id} className={`p-4 transition-all duration-300 hover:shadow-md hover:scale-105 ${
-                pkg.popular ? 'ring-2 ring-secondary shadow-secondary/20' : 'hover:bg-card/80'
-              }`}>
-                {pkg.popular && (
-                  <Badge variant="secondary" className="mb-3">
-                    Meilleur rapport
-                  </Badge>
-                )}
-                
-                <div className="text-center space-y-3">
-                  <div className="p-3 mx-auto w-fit rounded-full bg-secondary/10">
-                    <Clock className="h-6 w-6 text-secondary" />
-                  </div>
-                  
-                  <div>
-                    <div className="text-2xl font-bold text-foreground">{pkg.minutes}</div>
-                    <div className="text-xs text-muted-foreground">minutes</div>
-                  </div>
-                  
-                  <div>
-                    <div className="text-xl font-semibold text-foreground">
-                      {pkg.price.toLocaleString()} FCFA
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {pkg.pricePerMinute} FCFA/min
-                    </div>
-                  </div>
-                  
-                  <Button
-                    disabled={minutesLoading}
-                    onClick={() => purchaseMinutes(pkg.id)}
-                    className="w-full"
-                    variant={pkg.popular ? "default" : "outline"}
-                    size="sm"
-                  >
-                    Acheter
-                  </Button>
-                </div>
-              </Card>
-            ))}
-          </div>
-        </section>
-
-        {/* Actions */}
-        <section className="flex justify-center gap-4 pt-8">
-          <Button variant="outline" onClick={refresh} disabled={loading || minutesLoading}>
-            Actualiser le statut
-          </Button>
-        </section>
+        <BillingActions
+          onRefresh={refresh}
+          loading={loading}
+          minutesLoading={minutesLoading}
+        />
       </main>
     </div>
   );
