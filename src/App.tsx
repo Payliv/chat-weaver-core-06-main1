@@ -7,7 +7,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import Settings from "./pages/Settings";
-import Team from "./pages/Team";
+import Team from "./pages/Team"; // Updated import
 import Billing from "./pages/Billing";
 import Landing from "./pages/Landing";
 import NewLanding from "./pages/NewLanding";
