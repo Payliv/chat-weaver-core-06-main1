@@ -77,9 +77,9 @@ export const TeamCard = ({ team, teamLimit, onInviteMember, onRemoveMember, onCa
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Inviter un membre dans {team.name}</DialogTitle>
+                  <DialogTitle>Inviter un membre à partager votre plan</DialogTitle>
                   <DialogDescription>
-                    Envoyez une invitation par email.
+                    Envoyez une invitation par email pour partager votre plan premium.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
