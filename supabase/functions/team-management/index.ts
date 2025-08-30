@@ -164,6 +164,67 @@ const handleGetTeams = async (supabaseService: SupabaseClient, user: User, subIn
     return { success: true, teams: allTeams, teamLimit: subInfo.teamLimit, subscription: subInfo.subscription?.subscription_tier || 'Gratuit' };
 };
 
+const handleRemoveMember = async (supabaseService: SupabaseClient, user: User, body: any) => {
+  const { teamId, memberId } = body;
+  if (!teamId || !memberId) throw new Error("Team ID et ID du membre requis");
+
+  const { data: team } = await supabaseService.from('teams').select('id, name').eq('id', teamId).eq('owner_id', user.id).single();
+  if (!team) throw new Error("Équipe non trouvée ou vous n'êtes pas le propriétaire");
+
+  const { data: member } = await supabaseService.from('team_members').select('user_id, profiles:user_id(display_name)').eq('id', memberId).eq('team_id', teamId).single();
+
+  const { error } = await supabaseService.from('team_members').delete().eq('id', memberId).eq('team_id', teamId);
+  if (error) throw error;
+
+  await logTeamActivity(supabaseService, 'remove_member', teamId, user.id, {
+    removed_user_id: member?.user_id,
+    removed_user_name: member?.profiles?.display_name,
+    team_name: team.name
+  });
+
+  return { success: true, message: "Membre supprimé" };
+};
+
+const handleCancelInvitation = async (supabaseService: SupabaseClient, user: User, body: any) => {
+  const { invitationId } = body;
+  if (!invitationId) throw new Error("ID d'invitation requis");
+
+  const { data: invitation } = await supabaseService.from('team_invitations').select('team_id, email, teams(name)').eq('id', invitationId).single();
+  if (!invitation) throw new Error("Invitation non trouvée");
+
+  const { data: team } = await supabaseService.from('teams').select('id').eq('id', invitation.team_id).eq('owner_id', user.id).single();
+  if (!team) throw new Error("Vous n'êtes pas le propriétaire de cette équipe");
+
+  const { error } = await supabaseService.from('team_invitations').delete().eq('id', invitationId);
+  if (error) throw error;
+
+  await logTeamActivity(supabaseService, 'cancel_invitation', invitation.team_id, user.id, {
+    cancelled_email: invitation.email,
+    team_name: invitation.teams?.name,
+    invitation_id: invitationId
+  });
+
+  return { success: true, message: "Invitation annulée" };
+};
+
+const handleGetTeamHistory = async (supabaseService: SupabaseClient, user: User, body: any) => {
+  const { teamId } = body;
+  if (!teamId) throw new Error("Team ID requis");
+
+  const { data: teamAccess } = await supabaseService.from('teams').select('id, owner_id').eq('id', teamId).single();
+  if (!teamAccess) throw new Error("Équipe non trouvée");
+
+  const isOwner = teamAccess.owner_id === user.id;
+  if (!isOwner) {
+    const { data: membership } = await supabaseService.from('team_members').select('id').eq('team_id', teamId).eq('user_id', user.id).maybeSingle();
+    if (!membership) throw new Error("Accès refusé - vous n'êtes pas membre de cette équipe");
+  }
+
+  const { data: history } = await supabaseService.from('admin_logs').select('id, action, created_at, details').eq('details->>team_id', teamId).order('created_at', { ascending: false }).limit(50);
+
+  return { success: true, history: history || [] };
+};
+
 // --- Main Serve Function ---
 
 serve(async (req) => {
@@ -193,7 +254,15 @@ serve(async (req) => {
       case 'get_teams':
         result = await handleGetTeams(supabaseService, user, subscriptionInfo);
         break;
-      // Add other handlers here...
+      case 'remove_member':
+        result = await handleRemoveMember(supabaseService, user, body);
+        break;
+      case 'cancel_invitation':
+        result = await handleCancelInvitation(supabaseService, user, body);
+        break;
+      case 'get_team_history':
+        result = await handleGetTeamHistory(supabaseService, user, body);
+        break;
       default:
         throw new Error("Action non supportée");
     }
