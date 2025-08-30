@@ -6,8 +6,9 @@ declare const Deno: {
 };
 
 // @ts-ignore
-import { serve } from "https://deno.land/std@0.224.0/http/server.ts"; // Version Deno std lib mise à jour
-import { createClient, SupabaseClient, User } from "https://esm.sh/@supabase/supabase-js@2.102.1?dts"; // Version Supabase JS mise à jour
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts"; // Revert Deno std lib to a known stable version
+// @ts-ignore
+import { createClient, SupabaseClient, User } from "https://esm.sh/@supabase/supabase-js@2.45.0"; // Use a known stable version and remove ?dts
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
