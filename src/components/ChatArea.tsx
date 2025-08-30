@@ -15,7 +15,8 @@ import { aiService } from '@/services/aiService';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ImageService } from "@/services/imageService";
-import { TypingIndicator } from "./TypingIndicator";
+import { StreamingService } from "@/services/streamingService"; // Added import
+import { StreamingMessage } from "./StreamingMessage"; // Added import
 
 
 import { OpenRouterService } from "@/services/openRouterService";
@@ -187,10 +188,16 @@ export const ChatArea = ({ selectedModel, systemPrompt, safeMode, isLandingMode 
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // State for streaming messages
+  const [streamingMessageContent, setStreamingMessageContent] = useState('');
+  const [isAssistantStreaming, setIsAssistantStreaming] = useState(false);
+  const [currentStreamingModel, setCurrentStreamingModel] = useState('');
+
+
   const createNewConversation = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Non authentifié');
+      if (!user) return;
       const { data: conv, error: convError } = await supabase
         .from('conversations')
         .insert({ title: 'Nouvelle conversation', user_id: user.id })
@@ -251,7 +258,7 @@ export const ChatArea = ({ selectedModel, systemPrompt, safeMode, isLandingMode 
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messages, isLoading]);
+  }, [messages, isLoading, streamingMessageContent]); // Added streamingMessageContent to dependencies
 
   const handleSendMessage = async (content: string) => {
     const userMessage: Message = {
@@ -263,6 +270,9 @@ export const ChatArea = ({ selectedModel, systemPrompt, safeMode, isLandingMode 
 
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
+    setIsAssistantStreaming(true); // Start streaming indicator
+    setStreamingMessageContent(''); // Clear previous streaming content
+
 
     try {
       // Assurer l'existence d'une conversation
@@ -274,6 +284,7 @@ export const ChatArea = ({ selectedModel, systemPrompt, safeMode, isLandingMode 
           if (isLandingMode && onAuthRequired) {
             setMessages(prev => prev.slice(0, -1)); // Retirer le message utilisateur ajouté
             setIsLoading(false); // Réinitialiser le loading
+            setIsAssistantStreaming(false); // Stop streaming indicator
             onAuthRequired();
             return;
           }
@@ -353,6 +364,8 @@ export const ChatArea = ({ selectedModel, systemPrompt, safeMode, isLandingMode 
       // Si upload (data URL), gérer image/PDF
       if (typeof content === 'string' && content.startsWith('data:')) {
         // Fichier attaché: on attend une instruction utilisateur avant d'analyser
+        setIsLoading(false);
+        setIsAssistantStreaming(false);
         return;
       }
 
@@ -376,6 +389,7 @@ export const ChatArea = ({ selectedModel, systemPrompt, safeMode, isLandingMode 
             model: "app-generator"
           };
           setMessages(prev => [...prev, tempMessage]);
+          setIsAssistantStreaming(false); // Stop streaming for this specific message
 
           const generatedApp = await AppGeneratorService.generateApp(content);
           
@@ -434,6 +448,7 @@ export const ChatArea = ({ selectedModel, systemPrompt, safeMode, isLandingMode 
           return;
         } finally {
           setIsLoading(false);
+          setIsAssistantStreaming(false);
         }
       }
 
@@ -476,6 +491,7 @@ export const ChatArea = ({ selectedModel, systemPrompt, safeMode, isLandingMode 
           return;
         } finally {
           setIsLoading(false);
+          setIsAssistantStreaming(false);
         }
       }
 
@@ -495,6 +511,8 @@ export const ChatArea = ({ selectedModel, systemPrompt, safeMode, isLandingMode 
           content: assistantMessage.content,
           model: selectedModel
         });
+        setIsLoading(false);
+        setIsAssistantStreaming(false);
         return;
       }
 
@@ -514,6 +532,8 @@ export const ChatArea = ({ selectedModel, systemPrompt, safeMode, isLandingMode 
           content: assistantMessage.content,
           model: selectedModel
         });
+        setIsLoading(false);
+        setIsAssistantStreaming(false);
         return;
       }
 
@@ -543,48 +563,90 @@ export const ChatArea = ({ selectedModel, systemPrompt, safeMode, isLandingMode 
           content: dataUrl,
           model: selectedModel
         });
+        setIsLoading(false);
+        setIsAssistantStreaming(false);
         return;
       }
 
-      // Appel IA normal
+      // Appel IA normal avec streaming
       let actualModel = selectedModel;
+      let analysis = null;
 
       if (actualModel === 'auto-router') {
         console.log("🤖 Routage automatique activé");
-        const length = content.length < 100 ? 'short' as const : content.length > 500 ? 'long' as const : 'medium' as const;
-        const taskAnalysis = { type: 'general' as const, complexity: 'medium' as const, content, length };
-        const bestModel = await ModelRouterService.selectBestModel(taskAnalysis);
-        actualModel = bestModel;
-        setAutoRouterChoice(bestModel);
-        console.log(`🎯 Modèle sélectionné automatiquement: ${bestModel}`);
+        analysis = ModelRouterService.analyzePrompt(content);
+        actualModel = ModelRouterService.selectBestModel(analysis);
+        setAutoRouterChoice(actualModel);
+        console.log(`🎯 Modèle sélectionné automatiquement: ${actualModel}`);
       }
+      setCurrentStreamingModel(actualModel);
 
-      const systemMessage = systemPrompt || "Tu es un assistant utile et concis.";
-      const result = await aiService.generateIntelligent(content, actualModel, personality);
+      const taskType = analysis?.type || 'general';
+      const systemPromptContent = PromptEngineerService.createSystemPrompt({
+        taskType,
+        userPersonality: personality as any,
+        conversationHistory: messages.map(m => m.content),
+        isFirstMessage: messages.length === 0
+      });
       
-      if (!result.text) {
-        throw new Error("Aucune réponse reçue");
-      }
-
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content: result.text,
-        role: "assistant",
-        timestamp: new Date(),
-        model: actualModel
-      };
-
-      setMessages(prev => [...prev, assistantMessage]);
-
-      // Sauvegarder la réponse dans la base
-      await supabase.from('messages').insert({
-        conversation_id: convoId,
-        role: 'assistant',
-        content: result.text,
-        model: actualModel
+      const enhancedUserPrompt = PromptEngineerService.enhanceUserPrompt(content, {
+        taskType,
+        conversationHistory: messages.map(m => m.content),
+        isFirstMessage: messages.length === 0
       });
 
-      // TTS functionality moved to dedicated TTS Studio page
+      const messagesForStream = [
+        { role: 'system', content: systemPromptContent },
+        { role: 'user', content: enhancedUserPrompt }
+      ];
+
+      await StreamingService.streamWithFallback({
+        messages: messagesForStream,
+        model: actualModel,
+        onChunk: (chunk) => {
+          setStreamingMessageContent(prev => prev + chunk);
+        },
+        onComplete: async (fullText) => {
+          const assistantMessage: Message = {
+            id: (Date.now() + 1).toString(),
+            content: fullText,
+            role: "assistant",
+            timestamp: new Date(),
+            model: actualModel
+          };
+          setMessages(prev => [...prev, assistantMessage]);
+          setIsAssistantStreaming(false);
+          setStreamingMessageContent('');
+          setIsLoading(false);
+          // Save to Supabase
+          await supabase.from('messages').insert({
+            conversation_id: convoId,
+            role: 'assistant',
+            content: fullText,
+            model: actualModel
+          });
+        },
+        onError: async (error) => {
+          const errorMessage: Message = {
+            id: (Date.now() + 1).toString(),
+            content: `Erreur: ${error instanceof Error ? error.message : 'Une erreur est survenue'}`,
+            role: "assistant",
+            timestamp: new Date(),
+            model: actualModel
+          };
+          setMessages(prev => [...prev, errorMessage]);
+          setIsAssistantStreaming(false);
+          setStreamingMessageContent('');
+          setIsLoading(false);
+          // Save error message to Supabase
+          await supabase.from('messages').insert({
+            conversation_id: convoId,
+            role: 'assistant',
+            content: errorMessage.content,
+            model: actualModel
+          });
+        }
+      });
 
     } catch (error) {
       console.error('Erreur envoi message:', error);
@@ -596,8 +658,8 @@ export const ChatArea = ({ selectedModel, systemPrompt, safeMode, isLandingMode 
         model: selectedModel
       };
       setMessages(prev => [...prev, errorMessage]);
-    } finally {
       setIsLoading(false);
+      setIsAssistantStreaming(false);
     }
   };
 
@@ -623,20 +685,22 @@ export const ChatArea = ({ selectedModel, systemPrompt, safeMode, isLandingMode 
               message={message} 
             />
           ))}
-          {isLoading && (
-            <>
-              <ModelStatusIndicator 
-                selectedModel={selectedModel}
-                isLoading={isLoading}
-                autoRouterChoice={autoRouterChoice}
-              />
-              <TypingIndicator 
-                modelName={selectedModel === 'auto-router' && autoRouterChoice ? autoRouterChoice : selectedModel} 
-              />
-            </>
+          {isAssistantStreaming && (
+            <StreamingMessage
+              content={streamingMessageContent}
+              model={currentStreamingModel}
+              isStreaming={isAssistantStreaming}
+            />
+          )}
+          {isLoading && !isAssistantStreaming && ( // Show ModelStatusIndicator only if not actively streaming
+            <ModelStatusIndicator 
+              selectedModel={selectedModel}
+              isLoading={isLoading}
+              autoRouterChoice={autoRouterChoice}
+            />
           )}
 
-          {messages.length === 0 && !isLoading && (
+          {messages.length === 0 && !isLoading && !isAssistantStreaming && (
             <div className="flex flex-col items-center justify-center h-64 text-center space-y-4">
               <MessageSquare className="w-16 h-16 text-muted-foreground/50" />
               <div className="space-y-2">
