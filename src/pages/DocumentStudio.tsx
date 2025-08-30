@@ -67,7 +67,6 @@ export default function DocumentStudio() {
           <DocumentPreview
             selectedFile={selectedFile}
             isProcessing={isProcessing} // Pass isProcessing here
-            onDownloadFile={downloadFile}
           />
         </div>
 
