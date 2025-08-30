@@ -11,6 +11,7 @@ import { ArrowLeft, Sparkles, History, Copy, Loader2, Share2 } from 'lucide-reac
 import { useNavigate } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import MarkdownRenderer from '@/components/MarkdownRenderer';
 
 interface GenerationHistory {
   id: string;
@@ -93,7 +94,14 @@ export default function SocialMediaStudio() {
   };
 
   const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
+    // Strip markdown for clean copy
+    const plainText = text
+      .replace(/^#+\s/gm, '') // remove headers
+      .replace(/\*\*(.*?)\*\*/g, '$1') // remove bold
+      .replace(/\*(.*?)\*/g, '$1') // remove italic
+      .replace(/^\s*[-*]\s/gm, ''); // remove list bullets
+
+    navigator.clipboard.writeText(plainText);
     toast({ title: "Copié!", description: "Le contenu a été copié dans le presse-papiers." });
   };
 
@@ -164,8 +172,8 @@ export default function SocialMediaStudio() {
               <CardContent>
                 {generatedContent ? (
                   <div className="space-y-4">
-                    <div className="p-4 bg-muted rounded-md whitespace-pre-wrap text-sm">
-                      {generatedContent}
+                    <div className="p-4 bg-muted rounded-md text-sm">
+                      <MarkdownRenderer content={generatedContent} />
                     </div>
                     <Button variant="outline" size="sm" onClick={() => copyToClipboard(generatedContent)}>
                       <Copy className="w-4 h-4 mr-2" />
