@@ -198,20 +198,22 @@ serve(async (req) => {
         }
 
         // Check if user exists and is already a member
-        const { data: invitedUser } = await supabaseService.auth.admin.listUsers();
-        const targetUser = invitedUser.users.find(u => u.email === memberEmail);
+        const { data: invitedUserData, error: getUserByEmailError } = await supabaseService.auth.admin.getUserByEmail(memberEmail);
 
-        if (targetUser) {
+        if (invitedUserData?.user) {
           const { data: existingMember } = await supabaseService
             .from('team_members')
             .select('id')
             .eq('team_id', teamId)
-            .eq('user_id', targetUser.id)
+            .eq('user_id', invitedUserData.user.id)
             .maybeSingle();
 
           if (existingMember) {
             throw new Error("Cet utilisateur est déjà membre de l'équipe");
           }
+        } else if (getUserByEmailError && getUserByEmailError.message !== 'User not found') {
+          // Handle other errors from getUserByEmail
+          throw getUserByEmailError;
         }
 
         // Get inviter profile
@@ -241,11 +243,9 @@ serve(async (req) => {
 
         if (inviteError) throw inviteError;
 
-        // Generate invitation URL  
-        const baseUrl = Deno.env.get("NODE_ENV") === "production" 
-          ? "https://your-production-domain.com" 
-          : "https://000c91c6-f980-4359-901b-7034686d3ba2.sandbox.lovable.dev";
-        const inviteUrl = `${baseUrl}/team/accept-invitation?token=${invitation.id}&email=${encodeURIComponent(memberEmail)}`;
+        // Generate invitation URL
+        const origin = req.headers.get("origin") || "https://000c91c6-f980-4359-901b-7034686d3ba2.lovableproject.com";
+        const inviteUrl = `${origin}/team/accept-invitation?token=${invitation.id}&email=${encodeURIComponent(memberEmail)}`;
 
         // Send invitation email
         try {
