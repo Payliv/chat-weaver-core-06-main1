@@ -15,8 +15,8 @@ import { aiService } from '@/services/aiService';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ImageService } from "@/services/imageService";
-import { StreamingService } from "@/services/streamingService"; // Added import
-import { StreamingMessage } from "./StreamingMessage"; // Added import
+import { StreamingService } from "@/services/streamingService";
+import { StreamingMessage } from "./StreamingMessage";
 
 
 import { OpenRouterService } from "@/services/openRouterService";
@@ -204,7 +204,8 @@ export const ChatArea = ({ selectedModel, systemPrompt, safeMode, isLandingMode 
         .select('id')
         .maybeSingle();
       if (convError) throw convError;
-      setCurrentConversationId(conv?.id as string);
+      if (!conv) throw new Error('Conversation non créée'); // Ensure conv is not null
+      setCurrentConversationId(conv.id as string);
       setMessages([]);
     } catch (e) {
       console.error('Nouveau chat échoué', e);
