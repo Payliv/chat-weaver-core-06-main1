@@ -16,9 +16,9 @@ import MarkdownRenderer from '@/components/MarkdownRenderer';
 interface GenerationHistory {
   id: string;
   content_type: string;
-  prompt: string;
-  generated_content: string;
-  created_at: string;
+  prompt: string | null;
+  generated_content: string | null;
+  created_at: string | null;
 }
 
 const contentTypes = [
@@ -201,14 +201,14 @@ export default function SocialMediaStudio() {
                         <div className="flex justify-between items-start">
                           <div>
                             <Badge variant="secondary">{contentTypes.find(ct => ct.value === item.content_type)?.label}</Badge>
-                            <p className="text-sm text-muted-foreground mt-1 truncate">"{item.prompt}"</p>
+                            <p className="text-sm text-muted-foreground mt-1 truncate">"{item.prompt || ''}"</p>
                           </div>
-                          <Button variant="ghost" size="sm" onClick={() => setGeneratedContent(item.generated_content)}>
+                          <Button variant="ghost" size="sm" onClick={() => setGeneratedContent(item.generated_content || '')}>
                             Voir
                           </Button>
                         </div>
                         <p className="text-xs text-muted-foreground mt-2">
-                          {formatDistanceToNow(new Date(item.created_at), { addSuffix: true, locale: fr })}
+                          {item.created_at ? formatDistanceToNow(new Date(item.created_at), { addSuffix: true, locale: fr }) : ''}
                         </p>
                       </div>
                     )) : (

@@ -182,7 +182,7 @@ export const useChatLogic = ({ selectedModel, systemPrompt, safeMode, isLandingM
 
       let actualModel = selectedModel;
       if (actualModel === 'auto-router') {
-        const analysis = ModelRouterService.analyzePrompt(content);
+        const analysis = ModelRouterService.analyzeTask(content);
         actualModel = ModelRouterService.selectBestModel(analysis);
         setAutoRouterChoice(actualModel);
       }

@@ -540,6 +540,36 @@ export type Database = {
         }
         Relationships: []
       }
+      social_media_generations: {
+        Row: {
+          content_type: string
+          created_at: string | null
+          generated_content: string | null
+          id: string
+          prompt: string | null
+          target_platform: string | null
+          user_id: string
+        }
+        Insert: {
+          content_type: string
+          created_at?: string | null
+          generated_content?: string | null
+          id?: string
+          prompt?: string | null
+          target_platform?: string | null
+          user_id: string
+        }
+        Update: {
+          content_type?: string
+          created_at?: string | null
+          generated_content?: string | null
+          id?: string
+          prompt?: string | null
+          target_platform?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       subscribers: {
         Row: {
           created_at: string
