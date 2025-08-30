@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
-import { Users, UserPlus, History, CheckCircle, ArrowLeft, Shield, RefreshCw, Calendar, XCircle } from 'lucide-react';
+import { Users, UserPlus, History, CheckCircle, ArrowLeft, Shield, RefreshCw, Calendar, XCircle, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { TeamCard } from '@/components/team/TeamCard';
 import type { Team, TeamHistoryItem } from '@/components/team/types';
@@ -211,7 +211,7 @@ export default function TeamPage() {
               <div className="p-3 rounded-full bg-secondary/10"><Shield className="h-6 w-6 text-secondary" /></div>
               <div className="flex-1">
                 <h2 className="text-lg font-semibold text-foreground">Débloquez la collaboration d'équipe</h2>
-                <p className="text-muted-foreground">Passez au plan Pro ou supérieur pour créer des équipes.</p>
+                <p className="text-muted-foreground">Passez au plan Pro ou supérieur pour inviter des membres.</p>
               </div>
               <Button onClick={() => navigate("/billing")} variant="default">Mettre à niveau</Button>
             </div>
@@ -219,11 +219,17 @@ export default function TeamPage() {
         )}
 
         <div className="space-y-6">
-          {teams.length === 0 && !loading && !teamLoadError ? (
+          {loading && !isCreatingDefaultTeam && !teamLoadError ? (
             <Card className="p-8 text-center">
-              <div className="p-4 mx-auto w-fit rounded-full bg-muted/50 mb-4"><Users className="h-8 w-8 text-muted-foreground" /></div>
-              <h3 className="text-lg font-semibold mb-2">Chargement de votre équipe...</h3>
-              <p className="text-muted-foreground mb-4">Une équipe par défaut est en cours de création pour vous.</p>
+              <div className="p-4 mx-auto w-fit rounded-full bg-muted/50 mb-4"><Loader2 className="h-8 w-8 text-muted-foreground animate-spin" /></div>
+              <h3 className="text-lg font-semibold mb-2">Chargement de vos équipes...</h3>
+              <p className="text-muted-foreground mb-4">Veuillez patienter.</p>
+            </Card>
+          ) : isCreatingDefaultTeam && !teamLoadError ? (
+            <Card className="p-8 text-center">
+              <div className="p-4 mx-auto w-fit rounded-full bg-primary/10 mb-4"><Users className="h-8 w-8 text-primary animate-pulse" /></div>
+              <h3 className="text-lg font-semibold mb-2">Création de votre équipe par défaut...</h3>
+              <p className="text-muted-foreground mb-4">Ceci ne devrait prendre que quelques instants.</p>
             </Card>
           ) : teamLoadError ? (
             <Card className="p-8 text-center bg-red-50 border-red-200">
