@@ -208,6 +208,12 @@ export function AppSidebar({ isLandingMode = false, onAuthRequired }: AppSidebar
           <SidebarGroupContent>
             <SidebarMenu className="space-y-1">
               <SidebarMenuItem>
+                <SidebarMenuButton onClick={() => handleNavigation('/team')} className="w-full justify-start text-muted-foreground hover:text-foreground">
+                  <Users className="w-4 h-4" />
+                  {!isCollapsed && <span className="ml-2">Équipe</span>}
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
                 <SidebarMenuButton onClick={() => handleNavigation('/ebooks')} className="w-full justify-start text-muted-foreground hover:text-foreground">
                   <Wand2 className="w-4 h-4" />
                   {!isCollapsed && <span className="ml-2">Ebooks</span>}
