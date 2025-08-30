@@ -22,30 +22,37 @@ serve(async (req) => {
 
     const { messages, model, temperature, max_tokens, max_completion_tokens } = await req.json();
 
-    // Mapper GPT-5 vers GPT-4 en backend (garder mapping)
-    let actualModel = model || "gpt-4o";
-    if (model && model.startsWith('gpt-5')) {
-      if (model.includes('mini')) {
-        actualModel = "gpt-4o-mini";
-      } else if (model.includes('nano')) {
-        actualModel = "gpt-4o-mini";
-      } else {
-        actualModel = "gpt-4o";
-      }
-      console.log(`🔄 Streaming mapping ${model} -> ${actualModel}`);
+    // Clean model name: remove provider prefixes
+    let cleanModel = model || "gpt-4o";
+    if (cleanModel.includes('/')) {
+      const parts = cleanModel.split('/');
+      cleanModel = parts[parts.length - 1];
+      console.log(`🧹 Cleaned model name for stream: ${model} -> ${cleanModel}`);
     }
 
-    // Support nouveaux modèles OpenAI vs anciens (GPT-4o)
+    // Map GPT-5 to GPT-4o for backend processing
+    let actualModel = cleanModel;
+    if (cleanModel.startsWith('gpt-5')) {
+      if (cleanModel.includes('mini')) {
+        actualModel = "gpt-4o-mini";
+      } else if (cleanModel.includes('nano')) {
+        actualModel = "gpt-4o-mini"; // Use mini for nano as well
+      } else {
+        actualModel = "gpt-4o"; // Standard GPT-5 maps to GPT-4o
+      }
+      console.log(`🔄 Streaming mapping ${cleanModel} -> ${actualModel}`);
+    }
+
+    // Support new vs. old OpenAI models
     const isNewModel = actualModel && (actualModel.startsWith('gpt-4.1') || 
                                 actualModel.startsWith('o3-') || actualModel.startsWith('o4-'));
     
     const payload: any = {
       model: actualModel,
       messages: Array.isArray(messages) ? messages : [],
-      stream: true, // Activer le streaming
+      stream: true,
     };
 
-    // Paramètres selon le modèle
     if (isNewModel) {
       if (max_completion_tokens) payload.max_completion_tokens = max_completion_tokens;
     } else {
@@ -53,7 +60,7 @@ serve(async (req) => {
       if (max_tokens) payload.max_tokens = max_tokens;
     }
 
-    console.log(`🌊 Streaming avec ${actualModel}`);
+    console.log(`🌊 Streaming with ${actualModel}`);
 
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -72,7 +79,6 @@ serve(async (req) => {
       });
     }
 
-    // Créer un stream de réponse
     const stream = new ReadableStream({
       async start(controller) {
         const reader = response.body?.getReader();
@@ -108,7 +114,7 @@ serve(async (req) => {
                     controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({ content })}\n\n`));
                   }
                 } catch (e) {
-                  // Ignorer les erreurs de parsing
+                  // Ignore parsing errors for empty chunks
                 }
               }
             }

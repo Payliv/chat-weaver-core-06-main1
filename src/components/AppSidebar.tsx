@@ -17,12 +17,8 @@ import {
   SidebarMenuButton,
   useSidebar,
 } from "@/components/ui/sidebar";
-
-interface ConversationRow {
-  id: string;
-  title: string | null;
-  created_at: string;
-}
+import { conversationService, type Conversation } from "@/services/conversationService";
+import { useToast } from "@/hooks/use-toast";
 
 interface AppSidebarProps {
   isLandingMode?: boolean;
@@ -32,10 +28,11 @@ interface AppSidebarProps {
 export function AppSidebar({ isLandingMode = false, onAuthRequired }: AppSidebarProps) {
   const navigate = useNavigate();
   const location = useLocation();
+  const { toast } = useToast();
   const { state, isMobile } = useSidebar();
   const isOnChatPage = location.pathname === '/app';
   const [loading, setLoading] = useState(!isLandingMode);
-  const [items, setItems] = useState<ConversationRow[]>([]);
+  const [items, setItems] = useState<Conversation[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
@@ -43,10 +40,10 @@ export function AppSidebar({ isLandingMode = false, onAuthRequired }: AppSidebar
     if (isLandingMode) return;
     
     try {
+      setLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       
-      // Check if user is super admin
       const { data: roles } = await supabase
         .from('user_roles')
         .select('role')
@@ -55,16 +52,9 @@ export function AppSidebar({ isLandingMode = false, onAuthRequired }: AppSidebar
       
       setIsSuperAdmin(roles && roles.length > 0);
       
-      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-      const { data, error } = await supabase
-        .from('conversations')
-        .select('id, title, created_at')
-        .gte('created_at', thirtyDaysAgo)
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      setItems((data || []) as ConversationRow[]);
-      if ((data || []).length && !activeId) setActiveId((data as any)[0].id as string);
+      const convos = await conversationService.loadConversations(user.id);
+      setItems(convos);
+      if (convos.length && !activeId) setActiveId(convos[0].id);
     } catch (e) {
       console.error('Load conversations failed', e);
     } finally {
@@ -88,16 +78,25 @@ export function AppSidebar({ isLandingMode = false, onAuthRequired }: AppSidebar
     window.dispatchEvent(new CustomEvent('chat:select-conversation', { detail: { id } }));
   };
 
-  const createNewChat = () => {
+  const createNewChat = async () => {
     if (isLandingMode && onAuthRequired) {
       onAuthRequired();
       return;
     }
-    setActiveId(null);
-    window.dispatchEvent(new CustomEvent('chat:new-conversation'));
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const newConvo = await conversationService.createNewConversation(user.id);
+      if (newConvo) {
+        setItems(prev => [newConvo, ...prev]);
+        selectConversation(newConvo.id);
+      }
+    } catch (e) {
+      console.error('Create conversation failed', e);
+    }
   };
 
-          const handleNavigation = (path: string) => {
+  const handleNavigation = (path: string) => {
     if (isLandingMode && onAuthRequired) {
       onAuthRequired();
       return;
@@ -126,7 +125,6 @@ export function AppSidebar({ isLandingMode = false, onAuthRequired }: AppSidebar
 
   return (
     <Sidebar className="border-r border-border bg-background">
-      {/* Header */}
       <SidebarHeader className="border-b border-border p-4 bg-background">
         <div className="flex items-center space-x-2">
           <div className="w-12 h-12 rounded-lg flex items-center justify-center overflow-hidden">
@@ -143,7 +141,6 @@ export function AppSidebar({ isLandingMode = false, onAuthRequired }: AppSidebar
       </SidebarHeader>
 
       <SidebarContent className="p-4 bg-background">
-        {/* New Chat Button */}
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -157,8 +154,6 @@ export function AppSidebar({ isLandingMode = false, onAuthRequired }: AppSidebar
           </SidebarGroupContent>
         </SidebarGroup>
 
-
-        {/* Conversations List */}
         {!isLandingMode && (
           <SidebarGroup className="mt-4">
             <SidebarGroupContent>
@@ -209,7 +204,6 @@ export function AppSidebar({ isLandingMode = false, onAuthRequired }: AppSidebar
           </SidebarGroup>
         )}
 
-        {/* Navigation Menu */}
         <SidebarGroup className="mt-auto pt-4 border-t border-border bg-background">
           <SidebarGroupContent>
             <SidebarMenu className="space-y-1">
@@ -234,15 +228,6 @@ export function AppSidebar({ isLandingMode = false, onAuthRequired }: AppSidebar
                 </SidebarMenuButton>
               </SidebarMenuItem>
               
-              {/* Générateur Vidéo - Temporairement masqué
-              <SidebarMenuItem>
-                <SidebarMenuButton onClick={toggleVideoGenerator} className="w-full justify-start text-muted-foreground hover:text-foreground">
-                  <Video className="w-4 h-4" />
-                  {!isCollapsed && <span className="ml-2">Générateur Vidéo</span>}
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              */}
-              
               <SidebarMenuItem>
                 <SidebarMenuButton onClick={() => handleNavigation('/speech-to-text')} className="w-full justify-start text-muted-foreground hover:text-foreground">
                   <Languages className="w-4 h-4" />
@@ -250,7 +235,7 @@ export function AppSidebar({ isLandingMode = false, onAuthRequired }: AppSidebar
                 </SidebarMenuButton>
               </SidebarMenuItem>
               
-              {false && ( // Masquer l'entrée Code Studio
+              {false && (
                 <SidebarMenuItem>
                   <SidebarMenuButton onClick={() => handleNavigation('/code-studio')} className="w-full justify-start text-muted-foreground hover:text-foreground">
                     <Code2 className="w-4 h-4" />

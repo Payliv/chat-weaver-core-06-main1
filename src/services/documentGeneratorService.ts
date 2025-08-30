@@ -469,4 +469,47 @@ export class DocumentGeneratorService {
     
     return toc;
   }
+
+  // New simple document generation methods
+  static async generateSimplePDF(text: string): Promise<string> {
+    const pdfDoc = await PDFDocument.create();
+    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    const page = pdfDoc.addPage();
+    const { width, height } = page.getSize();
+    const fontSize = 12;
+    const margin = 50;
+    const textWidth = width - 2 * margin;
+    
+    const lines = this.wrapText(text, Math.floor(textWidth / (fontSize * 0.6)));
+    
+    let y = height - margin;
+    for (const line of lines) {
+      if (y < margin) {
+        page.addPage();
+        y = height - margin;
+      }
+      page.drawText(line, { x: margin, y, font, size: fontSize });
+      y -= fontSize * 1.2;
+    }
+    
+    return await pdfDoc.saveAsBase64({ dataUri: true });
+  }
+
+  static async generateSimpleDOCX(text: string): Promise<string> {
+    const doc = new DocxDocument({
+      sections: [{
+        children: text.split('\n').map(line => new Paragraph({ text: line })),
+      }],
+    });
+    const base64 = await Packer.toBase64String(doc);
+    return `data:application/vnd.openxmlformats-officedocument.wordprocessingml.document;base64,${base64}`;
+  }
+
+  static async generateSimplePPTX(text: string): Promise<string> {
+    const pptx = new PptxGenJS();
+    const slide = pptx.addSlide();
+    slide.addText(text, { x: 0.5, y: 0.5, w: '90%', h: '90%' });
+    const base64 = await pptx.write({ outputType: 'base64' });
+    return `data:application/vnd.openxmlformats-officedocument.presentationml.presentation;base64,${base64}`;
+  }
 }
