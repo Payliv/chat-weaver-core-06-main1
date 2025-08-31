@@ -18,7 +18,9 @@ const plans = [
       '🎤 100 min Voice-to-Text/mois',
       '📚 2 Ebooks Starter inclus/mois',
       '🔄 1 Conversion de document / jour',
-      '📑 1 Analyse de document / jour'
+      '📑 1 Analyse de document / jour',
+      '📱 Génération de contenu Social Media illimitée',
+      '🗣️ Prise de Parole: 5 min/jour'
     ],
     is_active: true,
     popular: false,
@@ -37,7 +39,9 @@ const plans = [
       '🎤 500 min Voice-to-Text/mois',
       '📚 5 Ebooks Pro inclus/mois',
       '🔄 Conversions de documents illimitées',
-      '📑 Analyse de documents illimitée'
+      '📑 Analyse de documents illimitée',
+      '📱 Génération de contenu Social Media illimitée',
+      '🗣️ Prise de Parole: Illimitée'
     ],
     is_active: true,
     popular: true,
@@ -56,11 +60,37 @@ const plans = [
       '🎤 Voice-to-Text illimité',
       '📚 20 Ebooks Business inclus',
       '🔄 Conversions de documents illimitées',
-      '📑 Analyse de documents illimitée'
+      '📑 Analyse de documents illimitée',
+      '📱 Génération de contenu Social Media illimitée',
+      '🗣️ Prise de Parole: 25 min/jour'
     ],
     is_active: true,
     popular: false,
     buttonText: 'Choisir Business'
+  },
+  {
+    id: '4',
+    name: 'Enterprise', 
+    description: 'Solution personnalisée pour grandes entreprises',
+    price: 0, // Sur devis
+    features: [
+      '👤 Utilisateurs illimités',
+      '🤖 Modèles IA illimités (GPT-5, Claude 3.5, Llama 3.3, etc.)',
+      '🎨 Images DALL·E 3 illimitées',
+      '🗣 Minutes TTS HD illimitées',
+      '🎤 Voice-to-Text illimité',
+      '📚 Ebooks illimités',
+      '🔄 Conversions de documents illimitées',
+      '📑 Analyse de documents illimitée',
+      '📱 Génération de contenu Social Media illimitée',
+      '🗣️ Prise de Parole: Illimitée',
+      '🔒 SLA personnalisé',
+      '📞 Support dédié 24/7',
+      '⚙️ Intégration API avancée'
+    ],
+    is_active: true,
+    popular: false,
+    buttonText: 'Nous contacter'
   }
 ];
 
