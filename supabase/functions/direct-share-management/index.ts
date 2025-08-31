@@ -1,14 +1,16 @@
-// Déclaration globale de l'objet Deno pour la reconnaissance TypeScript
-declare const Deno: {
-  env: {
-    get(key: string): string | undefined;
-  };
-};
-
 // @ts-ignore
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 // @ts-ignore
-import { createClient, SupabaseClient, User } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+
+// Déclaration globale pour Deno.env.get afin de satisfaire le compilateur TypeScript
+declare global {
+  namespace Deno {
+    namespace env {
+      function get(key: string): string | undefined;
+    }
+  }
+}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -22,7 +24,9 @@ const log = (step: string, details?: unknown) => console.log(`[DIRECT-SHARE-MANA
 
 const getSupabaseClients = () => {
   log("getSupabaseClients: Initializing service client");
+  // @ts-ignore
   const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+  // @ts-ignore
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
   if (!supabaseUrl) log("getSupabaseClients: SUPABASE_URL is missing!");
   if (!serviceKey) log("getSupabaseClients: SUPABASE_SERVICE_ROLE_KEY is missing!");
@@ -34,6 +38,7 @@ const getSupabaseClients = () => {
   );
   
   log("getSupabaseClients: Initializing anon client");
+  // @ts-ignore
   const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
   if (!anonKey) log("getSupabaseClients: SUPABASE_ANON_KEY is missing!");
 
@@ -44,7 +49,7 @@ const getSupabaseClients = () => {
   return { supabaseService, supabaseAnon };
 };
 
-const authenticateUser = async (req: Request, supabaseAnon: SupabaseClient): Promise<User> => {
+const authenticateUser = async (req: Request, supabaseAnon: SupabaseClient): Promise<any> => { // Changed User to any
   log("authenticateUser: start");
   const authHeader = req.headers.get("Authorization");
   if (!authHeader) {
@@ -65,7 +70,7 @@ const authenticateUser = async (req: Request, supabaseAnon: SupabaseClient): Pro
   return user;
 };
 
-const getSharerSubscriptionInfo = async (supabaseService: SupabaseClient, user: User) => {
+const getSharerSubscriptionInfo = async (supabaseService: SupabaseClient, user: any) => { // Changed User to any
   log("getSharerSubscriptionInfo: start", { userId: user.id });
   const { data: subscriber, error: subError } = await supabaseService
     .from('subscribers')
@@ -107,7 +112,7 @@ const getSharerSubscriptionInfo = async (supabaseService: SupabaseClient, user: 
 
 // --- Action Handlers ---
 
-const handleShareSubscription = async (supabaseService: SupabaseClient, user: User, subInfo: any, body: any) => {
+const handleShareSubscription = async (supabaseService: SupabaseClient, user: any, subInfo: any, body: any) => { // Changed User to any
   log("handleShareSubscription: start", { sharerUserId: user.id, targetEmail: body.targetEmail });
   const { targetEmail } = body;
   if (!targetEmail) throw new Error("Email de l l'utilisateur à partager requis");
@@ -117,11 +122,14 @@ const handleShareSubscription = async (supabaseService: SupabaseClient, user: Us
   }
 
   // 1. Get target user ID
-  const { data: targetUserData, error: targetUserError } = await supabaseService.auth.admin.getUserByEmail(targetEmail);
-  if (targetUserError || !targetUserData.user) {
+  const { data: userIdData, error: userIdError } = await supabaseService.functions.invoke('get-user-id-by-email', {
+    body: { email: targetEmail.trim() }
+  });
+
+  if (userIdError || !userIdData?.userId) {
     throw new Error("L'utilisateur avec cet email n'existe pas.");
   }
-  const sharedWithUserId = targetUserData.user.id;
+  const sharedWithUserId = userIdData.userId;
 
   // 2. Check share limit
   const { count: currentShares, error: sharesCountError } = await supabaseService.from('shared_access').select('id', { count: 'exact' }).eq('sharer_user_id', user.id);
@@ -145,17 +153,20 @@ const handleShareSubscription = async (supabaseService: SupabaseClient, user: Us
   return { success: true, message: `Abonnement partagé avec ${targetEmail}`, sharedAccess };
 };
 
-const handleRevokeSubscription = async (supabaseService: SupabaseClient, user: User, body: any) => {
+const handleRevokeSubscription = async (supabaseService: SupabaseClient, user: any, body: any) => { // Changed User to any
   log("handleRevokeSubscription: start", { sharerUserId: user.id, targetEmail: body.targetEmail });
   const { targetEmail } = body;
   if (!targetEmail) throw new Error("Email de l'utilisateur à retirer requis");
 
   // 1. Get target user ID
-  const { data: targetUserData, error: targetUserError } = await supabaseService.auth.admin.getUserByEmail(targetEmail);
-  if (targetUserError || !targetUserData.user) {
+  const { data: userIdData, error: userIdError } = await supabaseService.functions.invoke('get-user-id-by-email', {
+    body: { email: targetEmail.trim() }
+  });
+
+  if (userIdError || !userIdData?.userId) {
     throw new Error("L'utilisateur avec cet email n'existe pas.");
   }
-  const sharedWithUserId = targetUserData.user.id;
+  const sharedWithUserId = userIdData.userId;
 
   // 2. Delete from shared_access
   const { error: deleteError } = await supabaseService.from('shared_access')
@@ -169,7 +180,7 @@ const handleRevokeSubscription = async (supabaseService: SupabaseClient, user: U
   return { success: true, message: `Accès retiré pour ${targetEmail}` };
 };
 
-const handleGetSharedUsers = async (supabaseService: SupabaseClient, user: User, subInfo: any) => {
+const handleGetSharedUsers = async (supabaseService: SupabaseClient, user: any, subInfo: any) => { // Changed User to any
   log("handleGetSharedUsers: start", { sharerUserId: user.id });
 
   const { data: sharedUsers, error: fetchError } = await supabaseService.from('shared_access')
