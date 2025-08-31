@@ -17,6 +17,8 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { aiService, AIMessage } from '@/services/aiService';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
+import { AudioRecordingControls } from '@/components/AudioRecordingControls'; // Import AudioRecordingControls
+import { RecordingState, AudioRecorderService } from '@/services/audioRecorderService'; // Import RecordingState and AudioRecorderService
 
 interface GuidedExercisesSectionProps {
   dailyChallenge: string;
@@ -27,6 +29,12 @@ interface GuidedExercisesSectionProps {
   setIsEvaluatingExercise: (isEvaluating: boolean) => void;
   exerciseFeedback: string;
   setExerciseFeedback: (feedback: string) => void;
+  audioRecorder: AudioRecorderService; // Added to props
+  recordingState: RecordingState; // Added to props
+  handleStartRecording: () => Promise<void>; // Added to props
+  handleStopRecording: () => Promise<any | null>; // Added to props
+  handlePauseRecording: () => void; // Added to props
+  handleResumeRecording: () => void; // Added to props
 }
 
 export const GuidedExercisesSection: React.FC<GuidedExercisesSectionProps> = ({
@@ -38,8 +46,15 @@ export const GuidedExercisesSection: React.FC<GuidedExercisesSectionProps> = ({
   setIsEvaluatingExercise,
   exerciseFeedback,
   setExerciseFeedback,
+  audioRecorder,
+  recordingState,
+  handleStartRecording,
+  handleStopRecording,
+  handlePauseRecording,
+  handleResumeRecording,
 }) => {
   const { toast } = useToast();
+  const [isTranscribing, setIsTranscribing] = useState(false); // Local state for transcription
 
   const generateDailyChallenge = async () => {
     setIsEvaluatingExercise(true);
@@ -66,8 +81,28 @@ export const GuidedExercisesSection: React.FC<GuidedExercisesSectionProps> = ({
     }
   };
 
-  const evaluateExercise = async () => {
-    if (!exerciseInput.trim()) {
+  const onStopRecordingAndEvaluate = async () => {
+    try {
+      const recording = await handleStopRecording();
+      if (!recording) return;
+
+      setIsTranscribing(true);
+      const transcribedText = await AudioRecorderService.transcribeRecording(recording);
+      setExerciseInput(transcribedText); // Set transcribed text to input for user to review/edit
+      setIsTranscribing(false);
+      toast({ title: "Enregistrement terminé", description: "Audio transcrit." });
+
+      // Automatically evaluate the transcribed text
+      await evaluateExercise(transcribedText);
+
+    } catch (error) {
+      toast({ title: "Erreur", description: error instanceof Error ? error.message : "Erreur lors de l'enregistrement", variant: "destructive" });
+      setIsTranscribing(false);
+    }
+  };
+
+  const evaluateExercise = async (textInput: string = exerciseInput) => {
+    if (!textInput.trim()) {
       toast({ title: "Erreur", description: "Veuillez entrer votre réponse à l'exercice.", variant: "destructive" });
       return;
     }
@@ -84,10 +119,10 @@ export const GuidedExercisesSection: React.FC<GuidedExercisesSectionProps> = ({
         },
         {
           role: 'user',
-          content: `Voici ma réponse au défi:\n\n${exerciseInput}`
+          content: `Voici ma réponse au défi:\n\n${textInput}`
         }
       ];
-      const result = await aiService.generateIntelligent(exerciseInput, 'gpt-4o-mini', 'default', prompt.map(m => m.content));
+      const result = await aiService.generateIntelligent(textInput, 'gpt-4o-mini', 'default', prompt.map(m => m.content));
       setExerciseFeedback(result.text);
     } catch (error) {
       toast({ title: "Erreur", description: "Impossible d'évaluer l'exercice.", variant: "destructive" });
@@ -124,10 +159,24 @@ export const GuidedExercisesSection: React.FC<GuidedExercisesSectionProps> = ({
                   value={exerciseInput}
                   onChange={(e) => setExerciseInput(e.target.value)}
                   className="min-h-[100px]"
-                  disabled={isEvaluatingExercise}
+                  disabled={isEvaluatingExercise || recordingState.isRecording}
                 />
               </div>
-              <Button onClick={evaluateExercise} disabled={!exerciseInput.trim() || isEvaluatingExercise} className="w-full">
+              <div className="space-y-2">
+                <Label>Enregistrement vocal</Label>
+                <div className="p-3 border rounded-lg">
+                  <AudioRecordingControls
+                    recordingState={recordingState}
+                    onStartRecording={handleStartRecording}
+                    onPauseRecording={handlePauseRecording}
+                    onResumeRecording={handleResumeRecording}
+                    onStopRecording={onStopRecordingAndEvaluate}
+                    isTranscribing={isTranscribing}
+                    compact={true}
+                  />
+                </div>
+              </div>
+              <Button onClick={() => evaluateExercise()} disabled={!exerciseInput.trim() || isEvaluatingExercise || recordingState.isRecording} className="w-full">
                 {isEvaluatingExercise ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Évaluation...

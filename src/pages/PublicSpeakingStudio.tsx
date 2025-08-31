@@ -10,16 +10,16 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AudioRecorderService } from '@/services/audioRecorderService';
-import { SpeechAnalysisSection } from '@/components/public-speaking-studio/SpeechAnalysisSection'; // Corrected import path
-import { AudienceSimulationSection, AudienceMessage } from '@/components/public-speaking-studio/AudienceSimulationSection'; // Corrected import path and imported AudienceMessage
-import { GuidedExercisesSection } from '@/components/public-speaking-studio/GuidedExercisesSection'; // Corrected import path
+import { TextToSpeechService, TTSSettings } from '@/services/textToSpeechService'; // Import TextToSpeechService and TTSSettings
+import { SpeechAnalysisSection } from '@/components/public-speaking-studio/SpeechAnalysisSection';
+import { AudienceSimulationSection, AudienceMessage } from '@/components/public-speaking-studio/AudienceSimulationSection';
+import { GuidedExercisesSection } from '@/components/public-speaking-studio/GuidedExercisesSection';
 
 export default function PublicSpeakingStudio() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Global State for Speech Analysis
-  const [speechText, setSpeechText] = useState('');
+  // --- Global State for Audio Recording ---
   const [audioRecorder] = useState(() => new AudioRecorderService());
   const [recordingState, setRecordingState] = useState({
     isRecording: false,
@@ -28,25 +28,85 @@ export default function PublicSpeakingStudio() {
     size: 0,
     currentRecording: null
   });
+
+  // --- Global State for Text-to-Speech (TTS) ---
+  const [ttsSettings, setTtsSettings] = useState<TTSSettings>({
+    provider: 'openai',
+    voice: 'alloy',
+    language: 'fr', // Default to French
+    speed: 1.0,
+    format: 'mp3'
+  });
+  const [isTtsPlaying, setIsTtsPlaying] = useState(false);
+
+  // --- Speech Analysis State ---
+  const [speechText, setSpeechText] = useState('');
   const [isAnalyzingSpeech, setIsAnalyzingSpeech] = useState(false);
   const [speechAnalysisResult, setSpeechAnalysisResult] = useState<any | null>(null);
   const [analysisProgress, setAnalysisProgress] = useState(0);
   const [analysisStep, setAnalysisStep] = useState('');
 
-  // Global State for Audience Simulation
-  const [audienceMessages, setAudienceMessages] = useState<AudienceMessage[]>([]); // Corrected type
+  // --- Audience Simulation State ---
+  const [audienceMessages, setAudienceMessages] = useState<AudienceMessage[]>([]);
   const [audienceInput, setAudienceInput] = useState('');
   const [isAudienceResponding, setIsAudienceResponding] = useState(false);
   const [selectedPersona, setSelectedPersona] = useState('curious');
 
-  // Global State for Guided Exercises
+  // --- Guided Exercises State ---
   const [dailyChallenge, setDailyChallenge] = useState('');
   const [exerciseInput, setExerciseInput] = useState('');
   const [isEvaluatingExercise, setIsEvaluatingExercise] = useState(false);
   const [exerciseFeedback, setExerciseFeedback] = useState('');
 
-  // General UI State
+  // --- General UI State ---
   const [activeTab, setActiveTab] = useState('analysis');
+
+  // --- Audio Recording Controls (Centralized) ---
+  const handleStartRecording = useCallback(async () => {
+    try {
+      await audioRecorder.startRecording();
+      toast({ title: "Enregistrement démarré", description: "Parlez maintenant." });
+    } catch (error) {
+      toast({ title: "Erreur d'enregistrement", description: error instanceof Error ? error.message : "Impossible de démarrer l'enregistrement", variant: "destructive" });
+    }
+  }, [audioRecorder, toast]);
+
+  const handleStopRecording = useCallback(async () => {
+    try {
+      const recording = await audioRecorder.stopRecording();
+      toast({ title: "Enregistrement terminé", description: "Audio enregistré." });
+      return recording; // Return the recording object
+    } catch (error) {
+      toast({ title: "Erreur", description: error instanceof Error ? error.message : "Erreur lors de l'enregistrement", variant: "destructive" });
+      return null;
+    }
+  }, [audioRecorder, toast]);
+
+  const handlePauseRecording = useCallback(() => {
+    audioRecorder.pauseRecording();
+    toast({ title: "Enregistrement en pause", description: "Reprenez quand vous êtes prêt." });
+  }, [audioRecorder, toast]);
+
+  const handleResumeRecording = useCallback(() => {
+    audioRecorder.resumeRecording();
+    toast({ title: "Enregistrement repris", description: "Continuez votre discours." });
+  }, [audioRecorder, toast]);
+
+  // --- Text-to-Speech Function (Centralized) ---
+  const playTextToSpeech = useCallback(async (text: string, lang: string = ttsSettings.language) => {
+    setIsTtsPlaying(true);
+    try {
+      const audio = await TextToSpeechService.playTextAudio(text, { ...ttsSettings, language: lang });
+      audio.onended = () => setIsTtsPlaying(false);
+      audio.onerror = () => setIsTtsPlaying(false);
+    } catch (error) {
+      console.error('TTS playback error:', error);
+      toast({ title: "Erreur TTS", description: "Impossible de lire l'audio.", variant: "destructive" });
+    } finally {
+      setIsTtsPlaying(false);
+    }
+  }, [ttsSettings, toast]);
+
 
   useEffect(() => {
     audioRecorder.setStateChangeCallback(setRecordingState);
@@ -99,6 +159,10 @@ export default function PublicSpeakingStudio() {
               setSpeechText={setSpeechText}
               audioRecorder={audioRecorder}
               recordingState={recordingState}
+              handleStartRecording={handleStartRecording}
+              handleStopRecording={handleStopRecording}
+              handlePauseRecording={handlePauseRecording}
+              handleResumeRecording={handleResumeRecording}
               isAnalyzingSpeech={isAnalyzingSpeech}
               setIsAnalyzingSpeech={setIsAnalyzingSpeech}
               speechAnalysisResult={speechAnalysisResult}
@@ -121,6 +185,15 @@ export default function PublicSpeakingStudio() {
               setIsAudienceResponding={setIsAudienceResponding}
               selectedPersona={selectedPersona}
               setSelectedPersona={setSelectedPersona}
+              audioRecorder={audioRecorder}
+              recordingState={recordingState}
+              handleStartRecording={handleStartRecording}
+              handleStopRecording={handleStopRecording}
+              handlePauseRecording={handlePauseRecording}
+              handleResumeRecording={handleResumeRecording}
+              ttsSettings={ttsSettings}
+              playTextToSpeech={playTextToSpeech}
+              isTtsPlaying={isTtsPlaying}
             />
           </TabsContent>
 
@@ -135,6 +208,12 @@ export default function PublicSpeakingStudio() {
               setIsEvaluatingExercise={setIsEvaluatingExercise}
               exerciseFeedback={exerciseFeedback}
               setExerciseFeedback={setExerciseFeedback}
+              audioRecorder={audioRecorder}
+              recordingState={recordingState}
+              handleStartRecording={handleStartRecording}
+              handleStopRecording={handleStopRecording}
+              handlePauseRecording={handlePauseRecording}
+              handleResumeRecording={handleResumeRecording}
             />
           </TabsContent>
         </Tabs>

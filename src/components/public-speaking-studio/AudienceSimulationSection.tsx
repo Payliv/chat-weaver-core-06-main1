@@ -14,17 +14,22 @@ import {
   Frown,
   Meh,
   Lightbulb,
+  Volume2,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { aiService, AIMessage } from '@/services/aiService';
 import { TypingIndicator } from '@/components/TypingIndicator';
+import { AudioRecordingControls } from '@/components/AudioRecordingControls'; // Import AudioRecordingControls
+import { RecordingState, AudioRecorderService } from '@/services/audioRecorderService'; // Import RecordingState and AudioRecorderService
+import { TTSSettings } from '@/services/textToSpeechService'; // Import TTSSettings
 
-export interface AudienceMessage { // Exported interface
+export interface AudienceMessage {
   id: string;
   role: 'user' | 'audience';
   content: string;
   timestamp: string;
   persona?: string;
+  audioUrl?: string; // Added for audience voice
 }
 
 const AUDIENCE_PERSONAS = [
@@ -44,6 +49,15 @@ interface AudienceSimulationSectionProps {
   setIsAudienceResponding: (isResponding: boolean) => void;
   selectedPersona: string;
   setSelectedPersona: (persona: string) => void;
+  audioRecorder: AudioRecorderService; // Added to props
+  recordingState: RecordingState; // Added to props
+  handleStartRecording: () => Promise<void>; // Added to props
+  handleStopRecording: () => Promise<any | null>; // Added to props
+  handlePauseRecording: () => void; // Added to props
+  handleResumeRecording: () => void; // Added to props
+  ttsSettings: TTSSettings; // Added to props
+  playTextToSpeech: (text: string, lang?: string) => Promise<void>; // Added to props
+  isTtsPlaying: boolean; // Added to props
 }
 
 export const AudienceSimulationSection: React.FC<AudienceSimulationSectionProps> = ({
@@ -55,9 +69,19 @@ export const AudienceSimulationSection: React.FC<AudienceSimulationSectionProps>
   setIsAudienceResponding,
   selectedPersona,
   setSelectedPersona,
+  audioRecorder,
+  recordingState,
+  handleStartRecording,
+  handleStopRecording,
+  handlePauseRecording,
+  handleResumeRecording,
+  ttsSettings,
+  playTextToSpeech,
+  isTtsPlaying,
 }) => {
   const { toast } = useToast();
   const audienceChatScrollRef = useRef<HTMLDivElement>(null);
+  const [isTranscribing, setIsTranscribing] = useState(false); // Local state for transcription
 
   const startAudienceSimulation = useCallback(() => {
     setAudienceMessages([]);
@@ -71,18 +95,39 @@ export const AudienceSimulationSection: React.FC<AudienceSimulationSectionProps>
     };
     setAudienceMessages([initialMessage]);
     toast({ title: "Simulation démarrée", description: `Votre audience est prête : ${persona?.label}.` });
-  }, [selectedPersona, setAudienceMessages, toast]);
+    playTextToSpeech(initialMessage.content, ttsSettings.language); // Play initial message
+  }, [selectedPersona, setAudienceMessages, toast, playTextToSpeech, ttsSettings.language]);
 
-  const handleAudienceResponse = async () => {
-    if (!audienceInput.trim() || isAudienceResponding) return;
+  const onStopRecordingAndRespond = async () => {
+    try {
+      const recording = await handleStopRecording();
+      if (!recording) return;
+
+      setIsTranscribing(true);
+      const transcribedText = await AudioRecorderService.transcribeRecording(recording);
+      setAudienceInput(transcribedText); // Set transcribed text to input for user to review/edit
+      setIsTranscribing(false);
+      toast({ title: "Enregistrement terminé", description: "Audio transcrit." });
+
+      // Automatically send the transcribed text
+      await handleAudienceResponse(transcribedText);
+
+    } catch (error) {
+      toast({ title: "Erreur", description: error instanceof Error ? error.message : "Erreur lors de l'enregistrement", variant: "destructive" });
+      setIsTranscribing(false);
+    }
+  };
+
+  const handleAudienceResponse = async (textInput: string = audienceInput) => {
+    if (!textInput.trim() || isAudienceResponding) return;
 
     const userMessage: AudienceMessage = {
       id: crypto.randomUUID(),
       role: 'user',
-      content: audienceInput,
+      content: textInput,
       timestamp: new Date().toISOString()
     };
-    setAudienceMessages((prev: AudienceMessage[]) => [...prev, userMessage]);
+    setAudienceMessages(prev => [...prev, userMessage]); // Corrected type for prev
     setAudienceInput('');
     setIsAudienceResponding(true);
 
@@ -97,7 +142,7 @@ export const AudienceSimulationSection: React.FC<AudienceSimulationSectionProps>
         content: msg.content
       }));
 
-      const result = await aiService.generateIntelligent(audienceInput, 'gpt-4o-mini', 'default', [...conversationHistory, { role: 'system', content: systemPrompt }].map(m => m.content));
+      const result = await aiService.generateIntelligent(textInput, 'gpt-4o-mini', 'default', [...conversationHistory, { role: 'system', content: systemPrompt }].map(m => m.content));
       
       const aiResponse: AudienceMessage = {
         id: crypto.randomUUID(),
@@ -106,7 +151,8 @@ export const AudienceSimulationSection: React.FC<AudienceSimulationSectionProps>
         timestamp: new Date().toISOString(),
         persona: persona?.label
       };
-      setAudienceMessages((prev: AudienceMessage[]) => [...prev, aiResponse]);
+      setAudienceMessages(prev => [...prev, aiResponse]); // Corrected type for prev
+      playTextToSpeech(aiResponse.content, ttsSettings.language); // Play AI response
 
     } catch (error) {
       console.error('Audience simulation error:', error);
@@ -145,7 +191,7 @@ export const AudienceSimulationSection: React.FC<AudienceSimulationSectionProps>
               ))}
             </SelectContent>
           </Select>
-          <Button onClick={startAudienceSimulation} disabled={isAudienceResponding}>
+          <Button onClick={startAudienceSimulation} disabled={isAudienceResponding || isTtsPlaying}>
             <Play className="w-4 h-4 mr-2" /> Démarrer la simulation
           </Button>
         </div>
@@ -164,6 +210,17 @@ export const AudienceSimulationSection: React.FC<AudienceSimulationSectionProps>
                   <p className="text-xs text-muted-foreground mt-1">
                     {new Date(msg.timestamp).toLocaleTimeString()}
                   </p>
+                  {msg.role === 'audience' && msg.audioUrl && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => playTextToSpeech(msg.content, ttsSettings.language)} 
+                      disabled={isTtsPlaying}
+                      className="mt-2"
+                    >
+                      <Volume2 className="w-4 h-4 mr-2" /> Écouter
+                    </Button>
+                  )}
                 </div>
               </div>
             ))}
@@ -171,13 +228,13 @@ export const AudienceSimulationSection: React.FC<AudienceSimulationSectionProps>
           </div>
         </ScrollArea>
 
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2">
           <Textarea
             value={audienceInput}
             onChange={(e) => setAudienceInput(e.target.value)}
             placeholder="Répondez à l'audience..."
             className="flex-1 min-h-[40px] max-h-[100px]"
-            disabled={isAudienceResponding || audienceMessages.length === 0}
+            disabled={isAudienceResponding || audienceMessages.length === 0 || isTtsPlaying || recordingState.isRecording}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
@@ -185,9 +242,24 @@ export const AudienceSimulationSection: React.FC<AudienceSimulationSectionProps>
               }
             }}
           />
-          <Button onClick={handleAudienceResponse} disabled={!audienceInput.trim() || isAudienceResponding}>
-            <MessageSquare className="w-4 h-4" />
-          </Button>
+          <div className="flex gap-2">
+            <AudioRecordingControls
+              recordingState={recordingState}
+              onStartRecording={handleStartRecording}
+              onPauseRecording={handlePauseRecording}
+              onResumeRecording={handleResumeRecording}
+              onStopRecording={onStopRecordingAndRespond}
+              isTranscribing={isTranscribing}
+              compact={true}
+            />
+            <Button 
+              onClick={() => handleAudienceResponse()} 
+              disabled={!audienceInput.trim() || isAudienceResponding || isTtsPlaying || recordingState.isRecording}
+              className="flex-1"
+            >
+              <MessageSquare className="w-4 h-4 mr-2" /> Envoyer
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>

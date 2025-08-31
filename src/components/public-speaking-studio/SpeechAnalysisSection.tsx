@@ -16,7 +16,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { AudioRecordingControls } from '@/components/AudioRecordingControls'; // Corrected import path
+import { AudioRecordingControls } from '@/components/AudioRecordingControls';
 import { RecordingState, AudioRecorderService } from '@/services/audioRecorderService';
 import { aiService, AIMessage } from '@/services/aiService';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
@@ -38,13 +38,17 @@ interface SpeechAnalysisSectionProps {
   setSpeechText: (text: string) => void;
   audioRecorder: AudioRecorderService;
   recordingState: RecordingState;
+  handleStartRecording: () => Promise<void>; // Added to props
+  handleStopRecording: () => Promise<any | null>; // Added to props
+  handlePauseRecording: () => void; // Added to props
+  handleResumeRecording: () => void; // Added to props
   isAnalyzingSpeech: boolean;
   setIsAnalyzingSpeech: (isAnalyzing: boolean) => void;
   speechAnalysisResult: SpeechAnalysisResult | null;
   setSpeechAnalysisResult: (result: SpeechAnalysisResult | null) => void;
   analysisProgress: number;
   setAnalysisProgress: (progress: number) => void;
-  analysisStep: string; // Added analysisStep to props
+  analysisStep: string;
   setAnalysisStep: (step: string) => void;
 }
 
@@ -53,6 +57,10 @@ export const SpeechAnalysisSection: React.FC<SpeechAnalysisSectionProps> = ({
   setSpeechText,
   audioRecorder,
   recordingState,
+  handleStartRecording,
+  handleStopRecording,
+  handlePauseRecording,
+  handleResumeRecording,
   isAnalyzingSpeech,
   setIsAnalyzingSpeech,
   speechAnalysisResult,
@@ -60,22 +68,15 @@ export const SpeechAnalysisSection: React.FC<SpeechAnalysisSectionProps> = ({
   analysisProgress,
   setAnalysisStep,
   setAnalysisProgress,
-  analysisStep, // Destructured analysisStep here
+  analysisStep,
 }) => {
   const { toast } = useToast();
 
-  const handleStartRecording = async () => {
+  const onStopRecordingAndAnalyze = async () => {
     try {
-      await audioRecorder.startRecording();
-      toast({ title: "Enregistrement démarré", description: "Parlez maintenant." });
-    } catch (error) {
-      toast({ title: "Erreur d'enregistrement", description: error instanceof Error ? error.message : "Impossible de démarrer l'enregistrement", variant: "destructive" });
-    }
-  };
+      const recording = await handleStopRecording();
+      if (!recording) return;
 
-  const handleStopRecording = async () => {
-    try {
-      const recording = await audioRecorder.stopRecording();
       setIsAnalyzingSpeech(true);
       setAnalysisStep('Transcription de l\'audio...');
       setAnalysisProgress(20);
@@ -176,9 +177,9 @@ export const SpeechAnalysisSection: React.FC<SpeechAnalysisSectionProps> = ({
               <AudioRecordingControls
                 recordingState={recordingState}
                 onStartRecording={handleStartRecording}
-                onPauseRecording={() => audioRecorder.pauseRecording()}
-                onResumeRecording={() => audioRecorder.resumeRecording()}
-                onStopRecording={handleStopRecording}
+                onPauseRecording={handlePauseRecording}
+                onResumeRecording={handleResumeRecording}
+                onStopRecording={onStopRecordingAndAnalyze} // Use local handler to trigger analysis
                 isTranscribing={isAnalyzingSpeech}
                 compact={true}
               />
