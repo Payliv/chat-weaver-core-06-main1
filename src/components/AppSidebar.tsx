@@ -217,13 +217,7 @@ export function AppSidebar({ isLandingMode = false, onAuthRequired }: AppSidebar
         <SidebarGroup className="mt-auto pt-4 border-t border-border bg-background">
           <SidebarGroupContent>
             <SidebarMenu className="space-y-1">
-              <SidebarMenuItem>
-                <SidebarMenuButton onClick={() => handleNavigation('/team')} isActive={location.pathname === '/team'} className="w-full justify-start text-muted-foreground hover:text-foreground">
-                  <Users className="w-4 h-4" />
-                  {!isCollapsed && <span className="ml-2">Équipe</span>}
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              
+              {/* Removed Team link */}
               {isSubscribed && ( // Only show for subscribed users
                 <SidebarMenuItem>
                   <SidebarMenuButton onClick={() => handleNavigation('/share-subscription')} isActive={location.pathname === '/share-subscription'} className="w-full justify-start text-muted-foreground hover:text-foreground">

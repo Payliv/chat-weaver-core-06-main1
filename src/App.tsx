@@ -7,7 +7,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import Settings from "./pages/Settings";
-import Team from "./pages/Team"; // Updated import
+// import Team from "./pages/Team"; // Removed import
 import Billing from "./pages/Billing";
 import Landing from "./pages/Landing";
 import NewLanding from "./pages/NewLanding";
@@ -15,7 +15,7 @@ import SuperAdminDashboard from "./pages/SuperAdminDashboard";
 import ResetPassword from "./pages/ResetPassword";
 import UpdatePassword from "./pages/UpdatePassword";
 import AcceptInvitation from "./pages/AcceptInvitation";
-import ShareSubscription from "./pages/ShareSubscription"; // New import
+import ShareSubscription from "./pages/ShareSubscription";
 import Ebooks from "./pages/Ebooks";
 import DalleStudio from "./pages/DalleStudio";
 import TTSStudio from "./pages/TTSStudio";
@@ -40,9 +40,9 @@ const App = () => (
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/update-password" element={<UpdatePassword />} />
         <Route path="/settings" element={<Settings />} />
-        <Route path="/team" element={<Team />} />
+        {/* <Route path="/team" element={<Team />} /> Removed route */}
         <Route path="/team/accept-invitation" element={<AcceptInvitation />} />
-        <Route path="/share-subscription" element={<ShareSubscription />} /> {/* New Route */}
+        <Route path="/share-subscription" element={<ShareSubscription />} />
         <Route path="/speech-to-text" element={<SpeechToText />} />
         <Route path="/ebooks" element={<Ebooks />} />
         <Route path="/dalle-studio" element={<DalleStudio />} />
