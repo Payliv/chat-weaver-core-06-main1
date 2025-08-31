@@ -30,7 +30,7 @@ const featuresData = [
     icon: Brain,
     items: [
       {
-        title: "400+ Modèles IA via OpenRouter",
+        title: "Les meilleurs modèles de l'IA",
         description: "Accédez aux modèles les plus avancés du marché : GPT-5, Claude 3.5, Llama 3.3, Gemini Pro, Mistral Large, DeepSeek, Grok, Perplexity et plus de 50 autres fournisseurs, tous sur une seule plateforme.",
         details: ["Accès illimité aux modèles premium", "Mises à jour constantes des derniers modèles", "Choix du modèle adapté à chaque tâche"],
         highlight: true,
@@ -106,7 +106,7 @@ const featuresData = [
       {
         title: "Accès Illimité & Unifié",
         description: "Fini les abonnements multiples ! Accédez à toutes les IA et outils sans limites d'utilisation sur une seule plateforme.",
-        details: ["Plus de 400 modèles IA", "Génération de contenu illimitée", "Une seule interface pour tout gérer"],
+        details: ["Les meilleurs modèles de l'IA", "Génération de contenu illimitée", "Une seule interface pour tout gérer"],
         highlight: true,
       },
       {
