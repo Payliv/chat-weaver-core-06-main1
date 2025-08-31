@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { MessageSquare, Plus, Settings, Zap, Users, CreditCard, LogOut, Sparkles, Shield, Wand2, Video, Languages, Image, Volume2, Code2, FileText, Share2 } from "lucide-react";
+import { MessageSquare, Plus, Settings, Zap, Users, CreditCard, LogOut, Sparkles, Shield, Wand2, Video, Languages, Image, Volume2, Code2, FileText, Share2, Megaphone } from "lucide-react"; // Added Megaphone icon
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
@@ -245,6 +245,13 @@ export function AppSidebar({ isLandingMode = false, onAuthRequired }: AppSidebar
                 <SidebarMenuButton onClick={() => handleNavigation('/speech-to-text')} isActive={location.pathname === '/speech-to-text'} className="w-full justify-start text-muted-foreground hover:text-foreground">
                   <Languages className="w-4 h-4" />
                   {!isCollapsed && <span className="ml-2">Speech-to-Text</span>}
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <SidebarMenuButton onClick={() => handleNavigation('/public-speaking-studio')} isActive={location.pathname === '/public-speaking-studio'} className="w-full justify-start text-muted-foreground hover:text-foreground">
+                  <Megaphone className="w-4 h-4" />
+                  {!isCollapsed && <span className="ml-2">Prise de Parole</span>}
                 </SidebarMenuButton>
               </SidebarMenuItem>
               

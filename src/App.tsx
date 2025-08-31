@@ -26,6 +26,7 @@ import DocumentStudio from "./pages/DocumentStudio";
 import SocialMediaStudio from "./pages/SocialMediaStudio";
 import LegalNotice from "./pages/LegalNotice";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
+import PublicSpeakingStudio from "./pages/PublicSpeakingStudio"; // New import
 
 const App = () => (
   <TooltipProvider>
@@ -55,6 +56,7 @@ const App = () => (
         <Route path="/super-admin" element={<SuperAdminDashboard />} />
         <Route path="/legal-notice" element={<LegalNotice />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/public-speaking-studio" element={<PublicSpeakingStudio />} /> {/* New route */}
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="*" element={<NotFound />} />
       </Routes>
