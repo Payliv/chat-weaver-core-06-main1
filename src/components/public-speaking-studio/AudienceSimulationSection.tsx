@@ -42,7 +42,7 @@ const AUDIENCE_PERSONAS = [
 
 interface AudienceSimulationSectionProps {
   audienceMessages: AudienceMessage[];
-  setAudienceMessages: (messages: AudienceMessage[]) => void;
+  setAudienceMessages: React.Dispatch<React.SetStateAction<AudienceMessage[]>>; // Corrected type here
   audienceInput: string;
   setAudienceInput: (input: string) => void;
   isAudienceResponding: boolean;
