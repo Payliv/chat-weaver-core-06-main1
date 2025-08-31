@@ -42,7 +42,7 @@ const AUDIENCE_PERSONAS = [
 
 interface AudienceSimulationSectionProps {
   audienceMessages: AudienceMessage[];
-  setAudienceMessages: React.Dispatch<React.SetStateAction<AudienceMessage[]>>; // Corrected type here
+  setAudienceMessages: React.Dispatch<React.SetStateAction<AudienceMessage[]>>;
   audienceInput: string;
   setAudienceInput: (input: string) => void;
   isAudienceResponding: boolean;
@@ -127,7 +127,7 @@ export const AudienceSimulationSection: React.FC<AudienceSimulationSectionProps>
       content: textInput,
       timestamp: new Date().toISOString()
     };
-    setAudienceMessages(prev => [...prev, userMessage]); // Corrected type for prev
+    setAudienceMessages(prev => [...prev, userMessage]);
     setAudienceInput('');
     setIsAudienceResponding(true);
 
@@ -151,7 +151,7 @@ export const AudienceSimulationSection: React.FC<AudienceSimulationSectionProps>
         timestamp: new Date().toISOString(),
         persona: persona?.label
       };
-      setAudienceMessages(prev => [...prev, aiResponse]); // Corrected type for prev
+      setAudienceMessages(prev => [...prev, aiResponse]);
       playTextToSpeech(aiResponse.content, ttsSettings.language); // Play AI response
 
     } catch (error) {
