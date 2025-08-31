@@ -21,7 +21,7 @@ const LegalNotice = () => {
           <section>
             <h2 className="text-2xl font-semibold text-foreground mb-3">Édition du site</h2>
             <p>Le présent site, accessible à l’URL https://chatelix.app, est édité par :</p>
-            <p>G-STARTUP, société au capital de 1,000,000 FCFA, inscrite au R.C.S. de Dakar sous le numéro SN.DKR.2023.A.12345, dont le siège social est situé au 123 Avenue de la République, Dakar, Sénégal.</p>
+            <p>G-STARTUP, dont le siège social est situé au quartier bero, Niamey-Niger.</p>
           </section>
 
           <section>
@@ -36,8 +36,8 @@ const LegalNotice = () => {
 
           <section>
             <h2 className="text-2xl font-semibold text-foreground mb-3">Nous contacter</h2>
-            <p>Par téléphone : +221 77 123 45 67</p>
-            <p>Par email : contact@chatelix.app</p>
+            <p>Par téléphone : +22770138031</p>
+            <p>Par email : contact@gstartup.pro</p>
           </section>
 
           <section>
