@@ -131,14 +131,30 @@ const handleShareSubscription = async (supabaseService: SupabaseClient, user: an
   }
   const sharedWithUserId = userIdData.userId;
 
-  // 2. Check share limit
+  // 2. Check if target user already has an independent subscription
+  const { data: targetSubInfo, error: targetSubError } = await supabaseService
+    .from('subscribers')
+    .select('subscribed, subscription_tier')
+    .eq('user_id', sharedWithUserId)
+    .maybeSingle();
+
+  if (targetSubError) {
+    log('handleShareSubscription: Error checking target user subscription', targetSubError);
+    throw new Error("Erreur lors de la vérification de l'abonnement de l'utilisateur cible.");
+  }
+
+  if (targetSubInfo?.subscribed && targetSubInfo?.subscription_tier !== 'Shared') {
+    throw new Error("L'utilisateur cible a déjà un abonnement actif et indépendant.");
+  }
+
+  // 3. Check share limit
   const { count: currentShares, error: sharesCountError } = await supabaseService.from('shared_access').select('id', { count: 'exact' }).eq('sharer_user_id', user.id);
   if (sharesCountError) throw sharesCountError;
   if ((currentShares || 0) >= subInfo.shareLimit) {
     throw new Error(`Limite de partage atteinte (${subInfo.shareLimit} partages maximum).`);
   }
 
-  // 3. Insert into shared_access
+  // 4. Insert into shared_access
   const { data: sharedAccess, error: insertError } = await supabaseService.from('shared_access').upsert({
     sharer_user_id: user.id,
     shared_with_user_id: sharedWithUserId,
