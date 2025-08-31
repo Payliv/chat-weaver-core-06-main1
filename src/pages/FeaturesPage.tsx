@@ -61,11 +61,11 @@ const featuresData = [
         description: "Convertissez vos enregistrements audio en texte avec une précision remarquable, idéal pour les interviews, réunions ou podcasts.",
         details: ["Détection automatique de la langue", "Transcription rapide et fiable", "Support de divers formats audio"],
       },
-      {
-        title: "Génération de Vidéos (KlingAI)",
-        description: "Créez des vidéos à partir de texte ou d'images, pour vos campagnes marketing, réseaux sociaux ou présentations.",
-        details: ["Vidéos courtes et dynamiques", "Options de prompt négatif", "Divers formats d'aspect"],
-      },
+      // { // Masqué temporairement
+      //   title: "Génération de Vidéos (KlingAI)",
+      //   description: "Créez des vidéos à partir de texte ou d'images, pour vos campagnes marketing, réseaux sociaux ou présentations.",
+      //   details: ["Vidéos courtes et dynamiques", "Options de prompt négatif", "Divers formats d'aspect"],
+      // },
     ],
   },
   {
