@@ -218,14 +218,7 @@ export function AppSidebar({ isLandingMode = false, onAuthRequired }: AppSidebar
           <SidebarGroupContent>
             <SidebarMenu className="space-y-1">
               {/* Removed Team link */}
-              {isSubscribed && ( // Only show for subscribed users
-                <SidebarMenuItem>
-                  <SidebarMenuButton onClick={() => handleNavigation('/share-subscription')} isActive={location.pathname === '/share-subscription'} className="w-full justify-start text-muted-foreground hover:text-foreground">
-                    <Share2 className="w-4 h-4" />
-                    {!isCollapsed && <span className="ml-2">Partager l'abonnement</span>}
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              )}
+              {/* Removed Share Subscription link */}
 
               <SidebarMenuItem>
                 <SidebarMenuButton onClick={() => handleNavigation('/ebooks')} isActive={location.pathname === '/ebooks'} className="w-full justify-start text-muted-foreground hover:text-foreground">
