@@ -6,18 +6,30 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Users, Mail, Clock, Loader2, CheckCircle, XCircle, RefreshCw, Crown, Shield, UserPlus, UserX } from 'lucide-react';
+import { ArrowLeft, Users, Mail, Clock, Loader2, CheckCircle, XCircle, RefreshCw, Crown, Shield, UserPlus, UserX, User } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
-import type { TeamMember, PendingInvitation, Team } from '@/components/team/types';
 
-interface TeamData {
-  teams: Team[];
-  teamLimit: number;
-  subscription: string;
+interface SharedUser {
+  id: string;
+  shared_with_user_id: string;
+  shared_with_email: string;
+  status: 'active' | 'revoked';
+  created_at: string;
+  expires_at: string;
+  profiles?: {
+    display_name: string | null;
+    avatar_url: string | null;
+  } | null;
 }
 
-type MemberStatus = 'not_found' | 'not_member' | 'invited' | 'member_of_this_team' | 'member_of_other_team';
+interface SharerSubscriptionInfo {
+  subscriptionTier: string;
+  shareLimit: number;
+  sharerSubscriptionEnd: string | null;
+}
+
+type MemberStatus = 'not_found' | 'not_subscribed_user' | 'already_shared_by_me' | 'already_subscribed_independently' | 'can_share';
 
 export default function ShareSubscription() {
   const navigate = useNavigate();
@@ -28,17 +40,13 @@ export default function ShareSubscription() {
   const [inviteEmail, setInviteEmail] = useState('');
   const [user, setUser] = useState<any>(null);
   
-  const [userTeams, setUserTeams] = useState<Team[]>([]);
-  const [teamLimit, setTeamLimit] = useState(1);
-  const [subscriptionTier, setSubscriptionTier] = useState('Gratuit');
-  const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
+  const [sharedUsers, setSharedUsers] = useState<SharedUser[]>([]);
+  const [sharerSubInfo, setSharerSubInfo] = useState<SharerSubscriptionInfo | null>(null);
 
   const [memberStatus, setMemberStatus] = useState<MemberStatus>('not_found');
   const [targetUserId, setTargetUserId] = useState<string | null>(null);
-  const [targetInvitationId, setTargetInvitationId] = useState<string | null>(null);
-  const [isCreatingTeam, setIsCreatingTeam] = useState(false); // New state for team creation
 
-  const loadUserData = useCallback(async () => {
+  const loadSharerData = useCallback(async () => {
     setLoading(true);
     try {
       const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
@@ -48,25 +56,18 @@ export default function ShareSubscription() {
       }
       setUser(authUser);
 
-      const { data, error } = await supabase.functions.invoke('team-management', { body: { action: 'get_teams' } });
-      if (error) throw new Error(error.message || 'Erreur chargement des équipes');
+      const { data, error } = await supabase.functions.invoke('direct-share-management', { body: { action: 'get_shared_users' } });
+      if (error) throw new Error(error.message || 'Erreur chargement des données de partage');
       
-      const teamData: TeamData = data;
-      setUserTeams(teamData.teams || []);
-      setTeamLimit(teamData.teamLimit || 1);
-      setSubscriptionTier(teamData.subscription || 'Gratuit');
-
-      // Select the first owned team by default
-      const firstOwnedTeam = (teamData.teams || []).find(t => t.isOwner);
-      if (firstOwnedTeam) {
-        setSelectedTeam(firstOwnedTeam);
-      } else if (teamData.teams.length > 0) {
-        // If no owned team, select the first team the user is a member of
-        setSelectedTeam(teamData.teams[0]);
-      }
+      setSharedUsers(data.sharedUsers || []);
+      setSharerSubInfo({
+        subscriptionTier: data.subscriptionTier || 'Gratuit',
+        shareLimit: data.shareLimit || 0,
+        sharerSubscriptionEnd: data.sharerSubscriptionEnd || null,
+      });
 
     } catch (error: any) {
-      console.error('Error loading user data:', error);
+      console.error('Error loading sharer data:', error);
       toast({ title: "Erreur", description: error.message, variant: "destructive" });
     } finally {
       setLoading(false);
@@ -74,62 +75,57 @@ export default function ShareSubscription() {
   }, [navigate, toast]);
 
   useEffect(() => {
-    loadUserData();
-  }, [loadUserData]);
+    loadSharerData();
+  }, [loadSharerData]);
 
   const checkMemberStatus = useCallback(async () => {
-    if (!inviteEmail.trim() || !selectedTeam) {
+    if (!inviteEmail.trim() || !sharerSubInfo) {
       setMemberStatus('not_found');
       setTargetUserId(null);
-      setTargetInvitationId(null);
       return;
     }
 
-    // 1. Check if email exists as a user
+    // 1. Check if email exists as a user in auth.users
     const { data: userIdData, error: userIdError } = await supabase.functions.invoke('get-user-id-by-email', {
       body: { email: inviteEmail.trim() }
     });
 
     if (userIdError || !userIdData?.userId) {
-      setMemberStatus('not_found');
+      setMemberStatus('not_subscribed_user'); // User not found in auth.users
       setTargetUserId(null);
-      setTargetInvitationId(null);
       return;
     }
 
     const foundUserId = userIdData.userId;
     setTargetUserId(foundUserId);
 
-    // 2. Check if user is already a member of THIS team
-    const isMemberOfThisTeam = selectedTeam.team_members.some(member => member.user_id === foundUserId);
-    if (isMemberOfThisTeam) {
-      setMemberStatus('member_of_this_team');
-      setTargetInvitationId(null);
+    // 2. Check if user is already shared by me
+    const isAlreadySharedByMe = sharedUsers.some(sharedUser => sharedUser.shared_with_user_id === foundUserId);
+    if (isAlreadySharedByMe) {
+      setMemberStatus('already_shared_by_me');
       return;
     }
 
-    // 3. Check if user has a pending invitation for THIS team
-    const pendingInvite = selectedTeam.pendingInvitations.find(inv => inv.email === inviteEmail.trim());
-    if (pendingInvite) {
-      setMemberStatus('invited');
-      setTargetInvitationId(pendingInvite.id);
+    // 3. Check if user is already subscribed independently (not shared by me)
+    const { data: targetSubInfo, error: targetSubError } = await supabase.functions.invoke('check-subscription', {
+      headers: { Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}` },
+      body: { userId: foundUserId } // Pass target user ID to check their subscription
+    });
+
+    if (targetSubError) {
+      console.error('Error checking target user subscription:', targetSubError);
+      // Fallback to can_share if we can't verify their subscription
+      setMemberStatus('can_share');
       return;
     }
 
-    // 4. Check if user is a member of ANY other team (optional, but good for context)
-    const isMemberOfOtherTeam = userTeams.some(team => 
-      team.id !== selectedTeam.id && team.team_members.some(member => member.user_id === foundUserId)
-    );
-    if (isMemberOfOtherTeam) {
-      setMemberStatus('member_of_other_team');
-      setTargetInvitationId(null);
+    if (targetSubInfo?.subscribed && targetSubInfo?.subscription_tier !== 'Shared') {
+      setMemberStatus('already_subscribed_independently');
       return;
     }
 
-    setMemberStatus('not_member'); // User exists but is not a member/invited to this team
-    setTargetInvitationId(null);
-
-  }, [inviteEmail, selectedTeam, userTeams]);
+    setMemberStatus('can_share'); // User exists, not shared by me, not independently subscribed
+  }, [inviteEmail, sharedUsers, sharerSubInfo]);
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -139,17 +135,17 @@ export default function ShareSubscription() {
   }, [inviteEmail, checkMemberStatus]);
 
   const handleShareSubscription = async () => {
-    if (!selectedTeam || !inviteEmail.trim()) return;
+    if (!sharerSubInfo || !inviteEmail.trim()) return;
 
     setProcessingAction(true);
     try {
-      const { error } = await supabase.functions.invoke('team-management', { 
-        body: { action: 'invite_member', teamId: selectedTeam.id, memberEmail: inviteEmail.trim() } 
+      const { error } = await supabase.functions.invoke('direct-share-management', { 
+        body: { action: 'share_subscription', targetEmail: inviteEmail.trim() } 
       });
       if (error) throw new Error(error.message);
-      toast({ title: "Invitation envoyée", description: `Invitation envoyée à ${inviteEmail.trim()}.` });
+      toast({ title: "Abonnement partagé", description: `Accès partagé avec ${inviteEmail.trim()}.` });
       setInviteEmail('');
-      await loadUserData(); // Refresh data
+      await loadSharerData(); // Refresh data
     } catch (error: any) {
       toast({ title: "Erreur", description: error.message, variant: "destructive" });
     } finally {
@@ -157,38 +153,18 @@ export default function ShareSubscription() {
     }
   };
 
-  const handleRemoveAccess = async (invitationId?: string) => {
-    if (!selectedTeam || !targetUserId) return;
+  const handleRevokeSubscription = async (emailToRevoke: string) => {
+    if (!sharerSubInfo || !emailToRevoke.trim()) return;
 
     setProcessingAction(true);
     try {
-      // If user has a pending invitation, cancel it
-      if (memberStatus === 'invited' && (invitationId || targetInvitationId)) {
-        const idToCancel = invitationId || targetInvitationId;
-        if (!idToCancel) throw new Error("ID d'invitation manquant.");
-        
-        const { error } = await supabase.functions.invoke('team-management', { 
-          body: { action: 'cancel_invitation', invitationId: idToCancel } 
-        });
-        if (error) throw new Error(error.message);
-        toast({ title: "Invitation annulée", description: `L'invitation pour ${inviteEmail.trim()} a été annulée.` });
-      } 
-      // If user is a member, remove them
-      else if (memberStatus === 'member_of_this_team') {
-        const memberToRemove = selectedTeam.team_members.find(m => m.user_id === targetUserId);
-        if (!memberToRemove) throw new Error("Membre non trouvé dans l'équipe.");
-        
-        const { error } = await supabase.functions.invoke('team-management', { 
-          body: { action: 'remove_member', teamId: selectedTeam.id, memberId: memberToRemove.id } 
-        });
-        if (error) throw new Error(error.message);
-        toast({ title: "Accès retiré", description: `L'accès de ${inviteEmail.trim()} a été retiré.` });
-      } else {
-        throw new Error("Action de suppression non valide pour cet utilisateur.");
-      }
-      
+      const { error } = await supabase.functions.invoke('direct-share-management', { 
+        body: { action: 'revoke_subscription', targetEmail: emailToRevoke.trim() } 
+      });
+      if (error) throw new Error(error.message);
+      toast({ title: "Accès retiré", description: `L'accès de ${emailToRevoke.trim()} a été retiré.` });
       setInviteEmail('');
-      await loadUserData(); // Refresh data
+      await loadSharerData(); // Refresh data
     } catch (error: any) {
       toast({ title: "Erreur", description: error.message, variant: "destructive" });
     } finally {
@@ -196,28 +172,11 @@ export default function ShareSubscription() {
     }
   };
 
-  const handleCreateTeam = async () => {
-    if (isCreatingTeam) return;
-    setIsCreatingTeam(true);
-    try {
-      const { error } = await supabase.functions.invoke('team-management', {
-        body: { action: 'create_team', teamName: 'Mon Équipe' } // Default name
-      });
-      if (error) throw new Error(error.message);
-      toast({ title: "Équipe créée !", description: "Votre première équipe a été créée." });
-      await loadUserData(); // Reload data to show the new team
-    } catch (error: any) {
-      toast({ title: "Erreur", description: error.message, variant: "destructive" });
-    } finally {
-      setIsCreatingTeam(false);
-    }
-  };
-
-  const isProOrBusiness = subscriptionTier.toLowerCase().includes('pro') || subscriptionTier.toLowerCase().includes('business') || subscriptionTier.toLowerCase().includes('enterprise');
-  const canInviteMore = selectedTeam && selectedTeam.isOwner && isProOrBusiness && (selectedTeam.team_members.length + selectedTeam.pendingInvitations.length < teamLimit);
+  const isPremiumSharer = sharerSubInfo?.subscriptionTier.toLowerCase().includes('pro') || sharerSubInfo?.subscriptionTier.toLowerCase().includes('business') || sharerSubInfo?.subscriptionTier.toLowerCase().includes('enterprise');
+  const canShareMore = sharerSubInfo && (sharedUsers.length < sharerSubInfo.shareLimit);
 
   const getActionButton = () => {
-    if (!selectedTeam || !selectedTeam.isOwner || !isProOrBusiness) {
+    if (!isPremiumSharer) {
       return (
         <Button disabled className="w-full">
           <Shield className="w-4 h-4 mr-2" /> Mettre à niveau pour partager
@@ -229,36 +188,19 @@ export default function ShareSubscription() {
       case 'not_found':
         return (
           <Button disabled className="w-full">
-            <XCircle className="w-4 h-4 mr-2" /> Utilisateur non trouvé
+            <XCircle className="w-4 h-4 mr-2" /> Entrez un email
           </Button>
         );
-      case 'not_member':
+      case 'not_subscribed_user':
         return (
-          <Button 
-            onClick={handleShareSubscription} 
-            disabled={processingAction || !canInviteMore || !inviteEmail.trim()}
-            className="w-full"
-          >
-            {processingAction ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <UserPlus className="w-4 h-4 mr-2" />}
-            {processingAction ? 'Envoi...' : 'Partager l\'abonnement'}
+          <Button disabled className="w-full">
+            <XCircle className="w-4 h-4 mr-2" /> Utilisateur non inscrit
           </Button>
         );
-      case 'invited':
+      case 'already_shared_by_me':
         return (
           <Button 
-            onClick={() => handleRemoveAccess(targetInvitationId || undefined)} 
-            disabled={processingAction}
-            variant="destructive"
-            className="w-full"
-          >
-            {processingAction ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <UserX className="w-4 h-4 mr-2" />}
-            {processingAction ? 'Annulation...' : 'Annuler l\'invitation'}
-          </Button>
-        );
-      case 'member_of_this_team':
-        return (
-          <Button 
-            onClick={() => handleRemoveAccess()} // Corrected: Wrap in arrow function
+            onClick={() => handleRevokeSubscription(inviteEmail.trim())} 
             disabled={processingAction}
             variant="destructive"
             className="w-full"
@@ -267,10 +209,21 @@ export default function ShareSubscription() {
             {processingAction ? 'Retrait...' : 'Retirer l\'accès'}
           </Button>
         );
-      case 'member_of_other_team':
+      case 'already_subscribed_independently':
         return (
           <Button disabled className="w-full">
-            <Users className="w-4 h-4 mr-2" /> Déjà membre d'une autre équipe
+            <Users className="w-4 h-4 mr-2" /> Déjà abonné
+          </Button>
+        );
+      case 'can_share':
+        return (
+          <Button 
+            onClick={handleShareSubscription} 
+            disabled={processingAction || !canShareMore || !inviteEmail.trim()}
+            className="w-full"
+          >
+            {processingAction ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <UserPlus className="w-4 h-4 mr-2" />}
+            {processingAction ? 'Partage...' : 'Partager l\'abonnement'}
           </Button>
         );
       default:
@@ -309,13 +262,13 @@ export default function ShareSubscription() {
                 <div>
                   <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">Partager l'abonnement</h1>
                   <p className="text-sm text-muted-foreground">
-                    Plan {subscriptionTier} - Partagez l'accès avec votre équipe.
+                    Plan {sharerSubInfo?.subscriptionTier || 'Gratuit'} - Partagez l'accès avec votre équipe.
                   </p>
                 </div>
               </div>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={loadUserData} disabled={loading || processingAction} className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={loadSharerData} disabled={loading || processingAction} className="flex items-center gap-2">
                 <RefreshCw className={`h-4 w-4 ${loading || processingAction ? 'animate-spin' : ''}`} /> Actualiser
               </Button>
             </div>
@@ -324,149 +277,93 @@ export default function ShareSubscription() {
       </header>
 
       <main className="container mx-auto max-w-7xl px-6 py-8">
-        {!isProOrBusiness ? (
+        {!isPremiumSharer ? (
           <Card className="p-6 mb-6 bg-gradient-to-r from-secondary/10 to-primary/10 border border-secondary/20">
             <CardContent className="p-0 flex items-center gap-4">
               <div className="p-3 rounded-full bg-secondary/10"><Shield className="h-6 w-6 text-secondary" /></div>
               <div className="flex-1">
-                <h2 className="text-lg font-semibold text-foreground">Débloquez la collaboration d'équipe</h2>
-                <p className="text-muted-foreground">Passez au plan Pro ou supérieur pour inviter des membres et partager votre abonnement.</p>
+                <h2 className="text-lg font-semibold text-foreground">Débloquez le partage d'abonnement</h2>
+                <p className="text-muted-foreground">Passez au plan Pro ou supérieur pour partager votre abonnement avec d'autres utilisateurs.</p>
               </div>
               <Button onClick={() => navigate("/billing")} variant="default">Mettre à niveau</Button>
             </CardContent>
           </Card>
         ) : (
           <div className="space-y-6">
-            {userTeams.length === 0 ? (
-              <Card className="p-8 text-center">
-                <CardContent className="p-0">
-                  <div className="p-4 mx-auto w-fit rounded-full bg-muted/50 mb-4"><Users className="h-8 w-8 text-muted-foreground" /></div>
-                  <h3 className="text-lg font-semibold mb-2">Aucune équipe trouvée</h3>
-                  <p className="text-muted-foreground mb-4">
-                    Vous n'avez pas encore d'équipe. Créez-en une pour commencer à partager votre abonnement.
+            <Card className="p-6">
+              <CardHeader className="p-0 mb-6">
+                <CardTitle className="text-xl flex items-center gap-2">
+                  <Users className="h-5 w-5 text-primary" />
+                  Gérer les accès partagés
+                </CardTitle>
+                <CardDescription>
+                  Invitez des utilisateurs à bénéficier de votre abonnement.
+                </CardDescription>
+              </CardHeader>
+
+              <div className="space-y-6">
+                {/* Share/Revoke Form */}
+                <div className="p-4 border rounded-lg space-y-3">
+                  <h3 className="font-semibold flex items-center gap-2">
+                    <Mail className="w-4 h-4" /> Partager ou retirer l'accès
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    {sharedUsers.length}/{sharerSubInfo?.shareLimit || 0} accès partagés utilisés.
                   </p>
-                  <Button 
-                    onClick={handleCreateTeam} 
-                    disabled={isCreatingTeam || processingAction}
-                    variant="default"
-                  >
-                    {isCreatingTeam ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <UserPlus className="w-4 h-4 mr-2" />}
-                    {isCreatingTeam ? 'Création...' : 'Créer ma première équipe'}
-                  </Button>
-                </CardContent>
-              </Card>
-            ) : (
-              <Card className="p-6">
-                <CardHeader className="p-0 mb-6">
-                  <CardTitle className="text-xl flex items-center gap-2">
-                    <Users className="h-5 w-5 text-primary" />
-                    Votre équipe : {selectedTeam?.name}
-                  </CardTitle>
-                  <CardDescription>
-                    Invitez des membres à rejoindre votre équipe et à partager votre abonnement.
-                  </CardDescription>
-                </CardHeader>
-
-                {selectedTeam && (
-                  <div className="space-y-6">
-                    {/* Invite/Remove Form */}
-                    <div className="p-4 border rounded-lg space-y-3">
-                      <h3 className="font-semibold flex items-center gap-2">
-                        <Mail className="w-4 h-4" /> Gérer l'accès par e-mail
-                      </h3>
-                      <p className="text-sm text-muted-foreground">
-                        {selectedTeam.team_members.length + selectedTeam.pendingInvitations.length}/{teamLimit} membres utilisés.
-                      </p>
-                      <div className="flex gap-2">
-                        <Input 
-                          type="email" 
-                          placeholder="email@exemple.com" 
-                          value={inviteEmail} 
-                          onChange={(e) => setInviteEmail(e.target.value)} 
-                          disabled={processingAction}
-                        />
-                        {getActionButton()}
-                      </div>
-                      {!canInviteMore && selectedTeam.isOwner && memberStatus === 'not_member' && (
-                        <p className="text-sm text-destructive flex items-center gap-1">
-                          <XCircle className="w-4 h-4" /> Limite de membres atteinte pour votre plan.
-                        </p>
-                      )}
-                      {!selectedTeam.isOwner && (
-                        <p className="text-sm text-muted-foreground flex items-center gap-1">
-                          <XCircle className="w-4 h-4" /> Seul le propriétaire de l'équipe peut gérer les accès.
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Current Members */}
-                    <div className="p-4 border rounded-lg space-y-3">
-                      <h3 className="font-semibold flex items-center gap-2">
-                        <Users className="w-4 h-4" /> Membres actuels ({selectedTeam.team_members.length})
-                      </h3>
-                      <ScrollArea className="h-48">
-                        <div className="space-y-2">
-                          {selectedTeam.team_members.length === 0 ? (
-                            <p className="text-muted-foreground text-sm text-center py-4">Aucun membre dans cette équipe.</p>
-                          ) : (
-                            selectedTeam.team_members.map((member) => (
-                              <div key={member.id} className="flex items-center justify-between p-2 bg-muted/30 rounded-md">
-                                <div className="flex items-center gap-2">
-                                  <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center">
-                                    <Users className="h-3 w-3 text-primary" />
-                                  </div>
-                                  <div>
-                                    <p className="font-medium text-sm">{member.profiles?.display_name || `Utilisateur ${member.user_id.slice(-4)}`}</p>
-                                    <p className="text-xs text-muted-foreground">{member.role === 'owner' ? 'Propriétaire' : 'Membre'}</p>
-                                  </div>
-                                </div>
-                                {member.role === 'owner' && <Badge variant="secondary" className="flex items-center gap-1"><Crown className="h-3 w-3" /> Propriétaire</Badge>}
-                              </div>
-                            ))
-                          )}
-                        </div>
-                      </ScrollArea>
-                    </div>
-
-                    {/* Pending Invitations */}
-                    <div className="p-4 border rounded-lg space-y-3">
-                      <h3 className="font-semibold flex items-center gap-2">
-                        <Clock className="w-4 h-4" /> Invitations en attente ({selectedTeam.pendingInvitations.length})
-                      </h3>
-                      <ScrollArea className="h-48">
-                        <div className="space-y-2">
-                          {selectedTeam.pendingInvitations.length === 0 ? (
-                            <p className="text-muted-foreground text-sm text-center py-4">Aucune invitation en attente.</p>
-                          ) : (
-                            selectedTeam.pendingInvitations.map((invitation) => (
-                              <div key={invitation.id} className="flex items-center justify-between p-2 bg-muted/30 rounded-md">
-                                <div className="flex items-center gap-2">
-                                  <div className="h-7 w-7 rounded-full bg-orange-100 flex items-center justify-center">
-                                    <Mail className="h-3 w-3 text-orange-600" />
-                                  </div>
-                                  <div>
-                                    <p className="font-medium text-sm">{invitation.email}</p>
-                                    <p className="text-xs text-muted-foreground">Expire le {new Date(invitation.expires_at).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
-                                  </div>
-                                </div>
-                                <Button 
-                                  variant="destructive" 
-                                  size="sm" 
-                                  onClick={() => handleRemoveAccess(invitation.id)}
-                                  disabled={processingAction}
-                                >
-                                  Annuler
-                                </Button>
-                              </div>
-                            ))
-                          )}
-                        </div>
-                      </ScrollArea>
-                    </div>
+                  <div className="flex gap-2">
+                    <Input 
+                      type="email" 
+                      placeholder="email@exemple.com" 
+                      value={inviteEmail} 
+                      onChange={(e) => setInviteEmail(e.target.value)} 
+                      disabled={processingAction}
+                    />
+                    {getActionButton()}
                   </div>
-                )}
-              </Card>
-            )}
+                  {!canShareMore && memberStatus === 'can_share' && (
+                    <p className="text-sm text-destructive flex items-center gap-1">
+                      <XCircle className="w-4 h-4" /> Limite de partages atteinte pour votre plan.
+                    </p>
+                  )}
+                </div>
+
+                {/* Current Shared Users */}
+                <div className="p-4 border rounded-lg space-y-3">
+                  <h3 className="font-semibold flex items-center gap-2">
+                    <Users className="w-4 h-4" /> Utilisateurs avec accès partagé ({sharedUsers.length})
+                  </h3>
+                  <ScrollArea className="h-48">
+                    <div className="space-y-2">
+                      {sharedUsers.length === 0 ? (
+                        <p className="text-muted-foreground text-sm text-center py-4">Aucun utilisateur avec accès partagé.</p>
+                      ) : (
+                        sharedUsers.map((sharedUser) => (
+                          <div key={sharedUser.id} className="flex items-center justify-between p-2 bg-muted/30 rounded-md">
+                            <div className="flex items-center gap-2">
+                              <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center">
+                                <User className="h-3 w-3 text-primary" />
+                              </div>
+                              <div>
+                                <p className="font-medium text-sm">{sharedUser.profiles?.display_name || sharedUser.shared_with_email}</p>
+                                <p className="text-xs text-muted-foreground">Accès partagé</p>
+                              </div>
+                            </div>
+                            <Button 
+                              variant="destructive" 
+                              size="sm" 
+                              onClick={() => handleRevokeSubscription(sharedUser.shared_with_email)}
+                              disabled={processingAction}
+                            >
+                              Retirer
+                            </Button>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </ScrollArea>
+                </div>
+              </div>
+            </Card>
           </div>
         )}
       </main>
