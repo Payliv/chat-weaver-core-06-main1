@@ -10,7 +10,6 @@ import { ArrowLeft, Users, Mail, Clock, Loader2, CheckCircle, XCircle, RefreshCw
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import type { TeamMember, PendingInvitation, Team } from '@/components/team/types';
-import { TeamCard } from '@/components/team/TeamCard'; // Import TeamCard
 
 interface TeamData {
   teams: Team[];
@@ -37,6 +36,7 @@ export default function ShareSubscription() {
   const [memberStatus, setMemberStatus] = useState<MemberStatus>('not_found');
   const [targetUserId, setTargetUserId] = useState<string | null>(null);
   const [targetInvitationId, setTargetInvitationId] = useState<string | null>(null);
+  const [isCreatingTeam, setIsCreatingTeam] = useState(false); // New state for team creation
 
   const loadUserData = useCallback(async () => {
     setLoading(true);
@@ -157,15 +157,18 @@ export default function ShareSubscription() {
     }
   };
 
-  const handleRemoveAccess = async () => {
+  const handleRemoveAccess = async (invitationId?: string) => {
     if (!selectedTeam || !targetUserId) return;
 
     setProcessingAction(true);
     try {
       // If user has a pending invitation, cancel it
-      if (memberStatus === 'invited' && targetInvitationId) {
+      if (memberStatus === 'invited' && (invitationId || targetInvitationId)) {
+        const idToCancel = invitationId || targetInvitationId;
+        if (!idToCancel) throw new Error("ID d'invitation manquant.");
+        
         const { error } = await supabase.functions.invoke('team-management', { 
-          body: { action: 'cancel_invitation', invitationId: targetInvitationId } 
+          body: { action: 'cancel_invitation', invitationId: idToCancel } 
         });
         if (error) throw new Error(error.message);
         toast({ title: "Invitation annulée", description: `L'invitation pour ${inviteEmail.trim()} a été annulée.` });
@@ -190,6 +193,23 @@ export default function ShareSubscription() {
       toast({ title: "Erreur", description: error.message, variant: "destructive" });
     } finally {
       setProcessingAction(false);
+    }
+  };
+
+  const handleCreateTeam = async () => {
+    if (isCreatingTeam) return;
+    setIsCreatingTeam(true);
+    try {
+      const { error } = await supabase.functions.invoke('team-management', {
+        body: { action: 'create_team', teamName: 'Mon Équipe' } // Default name
+      });
+      if (error) throw new Error(error.message);
+      toast({ title: "Équipe créée !", description: "Votre première équipe a été créée." });
+      await loadUserData(); // Reload data to show the new team
+    } catch (error: any) {
+      toast({ title: "Erreur", description: error.message, variant: "destructive" });
+    } finally {
+      setIsCreatingTeam(false);
     }
   };
 
@@ -226,7 +246,7 @@ export default function ShareSubscription() {
       case 'invited':
         return (
           <Button 
-            onClick={handleRemoveAccess} 
+            onClick={() => handleRemoveAccess(targetInvitationId || undefined)} 
             disabled={processingAction}
             variant="destructive"
             className="w-full"
@@ -238,7 +258,7 @@ export default function ShareSubscription() {
       case 'member_of_this_team':
         return (
           <Button 
-            onClick={handleRemoveAccess} 
+            onClick={() => handleRemoveAccess()} // Corrected: Wrap in arrow function
             disabled={processingAction}
             variant="destructive"
             className="w-full"
@@ -323,10 +343,16 @@ export default function ShareSubscription() {
                   <div className="p-4 mx-auto w-fit rounded-full bg-muted/50 mb-4"><Users className="h-8 w-8 text-muted-foreground" /></div>
                   <h3 className="text-lg font-semibold mb-2">Aucune équipe trouvée</h3>
                   <p className="text-muted-foreground mb-4">
-                    Vous devez être propriétaire d'une équipe pour inviter des membres.
-                    Veuillez créer une équipe via la page "Équipe" si vous n'en avez pas.
+                    Vous n'avez pas encore d'équipe. Créez-en une pour commencer à partager votre abonnement.
                   </p>
-                  <Button onClick={() => navigate('/team')} variant="outline">Aller à la gestion d'équipe</Button>
+                  <Button 
+                    onClick={handleCreateTeam} 
+                    disabled={isCreatingTeam || processingAction}
+                    variant="default"
+                  >
+                    {isCreatingTeam ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <UserPlus className="w-4 h-4 mr-2" />}
+                    {isCreatingTeam ? 'Création...' : 'Créer ma première équipe'}
+                  </Button>
                 </CardContent>
               </Card>
             ) : (
@@ -426,7 +452,7 @@ export default function ShareSubscription() {
                                 <Button 
                                   variant="destructive" 
                                   size="sm" 
-                                  onClick={() => handleRemoveAccess()} // Call handleRemoveAccess for consistency
+                                  onClick={() => handleRemoveAccess(invitation.id)}
                                   disabled={processingAction}
                                 >
                                   Annuler
