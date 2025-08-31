@@ -1,7 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
-import professionalAiHero from "@/assets/professional-ai-hero.png";
 
 export const HeroSection = () => {
   const navigate = useNavigate();
@@ -43,7 +42,7 @@ export const HeroSection = () => {
         <div className="relative">
           <div className="absolute inset-0 bg-gradient-primary opacity-20 blur-3xl rounded-3xl"></div>
           <img 
-            src={professionalAiHero}
+            src="https://images.pexels.com/photos/8386440/pexels-photo-8386440.jpeg?auto=compress&cs=tinysrgb&w=1200"
             alt="Interface Chatelix - Toutes les IA en un seul endroit"
             className="relative w-full max-w-4xl mx-auto h-auto object-contain drop-shadow-2xl rounded-2xl"
           />

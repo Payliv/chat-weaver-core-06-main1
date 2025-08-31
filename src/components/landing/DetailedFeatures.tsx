@@ -7,19 +7,19 @@ const detailedFeatures = [
     icon: Image,
     title: "Génération d'images (DALL·E 3)",
     description: "Créez des images haute qualité pour vos projets marketing, contenus ou designs.",
-    image: "/lovable-uploads/4d23475f-fa47-4f1b-bba0-5b597d4be24b.png"
+    image: "https://images.pexels.com/photos/3861969/pexels-photo-3861969.jpeg?auto=compress&cs=tinysrgb&w=800"
   },
   {
     icon: Volume2,
     title: "Voix Off (Text → Speech)",
     description: "Transformez vos textes en voix naturelles avec plusieurs voix disponibles.",
-    image: "/lovable-uploads/eb4adb27-683e-42a7-ade3-aa8185079db6.png"
+    image: "https://images.pexels.com/photos/7088526/pexels-photo-7088526.jpeg?auto=compress&cs=tinysrgb&w=800"
   },
   {
     icon: Mic,
     title: "Voice-to-Text",
     description: "Transcription précise pour vos podcasts, interviews et vidéos.",
-    image: "/lovable-uploads/ff955a65-24d1-4da4-a5d3-7e518af6492b.png"
+    image: "https://images.pexels.com/photos/4226140/pexels-photo-4226140.jpeg?auto=compress&cs=tinysrgb&w=800"
   }
 ];
 
