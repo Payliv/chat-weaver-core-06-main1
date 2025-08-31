@@ -14,12 +14,14 @@ import {
   Loader2,
   CheckCircle,
   XCircle,
+  Play, // Import Play icon for the audio player
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AudioRecordingControls } from '@/components/AudioRecordingControls';
 import { RecordingState, AudioRecorderService } from '@/services/audioRecorderService';
 import { aiService, AIMessage } from '@/services/aiService';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
+import { AudioPlayer } from '@/components/AudioPlayer'; // Import AudioPlayer
 
 interface SpeechAnalysisResult {
   fluidity: string;
@@ -27,6 +29,7 @@ interface SpeechAnalysisResult {
   vocabulary: string;
   structure: string;
   emotions: string;
+  impact: string; /* Correction: Ajout de la propriété 'impact' */
   errorsToAvoid: string;
   overallFeedback: string;
   practicalAdvice: string[];
@@ -38,10 +41,10 @@ interface SpeechAnalysisSectionProps {
   setSpeechText: (text: string) => void;
   audioRecorder: AudioRecorderService;
   recordingState: RecordingState;
-  handleStartRecording: () => Promise<void>; // Added to props
-  handleStopRecording: () => Promise<any | null>; // Added to props
-  handlePauseRecording: () => void; // Added to props
-  handleResumeRecording: () => void; // Added to props
+  handleStartRecording: () => Promise<void>;
+  handleStopRecording: () => Promise<any | null>;
+  handlePauseRecording: () => void;
+  handleResumeRecording: () => void;
   isAnalyzingSpeech: boolean;
   setIsAnalyzingSpeech: (isAnalyzing: boolean) => void;
   speechAnalysisResult: SpeechAnalysisResult | null;
@@ -77,6 +80,9 @@ export const SpeechAnalysisSection: React.FC<SpeechAnalysisSectionProps> = ({
       const recording = await handleStopRecording();
       if (!recording) return;
 
+      // Store the recording in state for playback
+      audioRecorder.setStateChangeCallback(prev => ({ ...prev, currentRecording: recording }));
+
       setIsAnalyzingSpeech(true);
       setAnalysisStep('Transcription de l\'audio...');
       setAnalysisProgress(20);
@@ -108,19 +114,28 @@ export const SpeechAnalysisSection: React.FC<SpeechAnalysisSectionProps> = ({
       const prompt: AIMessage[] = [
         {
           role: 'system',
-          content: `Tu es un coach expert en prise de parole en public. Ton rôle est d'analyser un discours et de fournir un feedback constructif et des conseils pratiques.
-          Analyse les aspects suivants : fluidité, clarté, vocabulaire, structure, émotions transmises, et erreurs courantes à éviter.
-          Fournis un score global sur 100 et des conseils actionnables.
+          content: `Tu es un coach expert en prise de parole en public, avec une approche réaliste et nuancée. Ton rôle est d'analyser un discours et de fournir un feedback constructif, détaillé et des conseils pratiques, comme si tu étais un coach humain expérimenté.
+          Analyse les aspects suivants en profondeur :
+          - **Fluidité et rythme** : Y a-t-il des hésitations, des pauses inappropriées, un débit trop rapide ou trop lent ?
+          - **Clarté et concision** : Le message est-il facile à comprendre ? Y a-t-il des redondances ou des tournures complexes ?
+          - **Vocabulaire et langage** : Le choix des mots est-il approprié pour l'audience et le sujet ? Y a-t-il des tics de langage ?
+          - **Structure et logique** : Le discours est-il bien organisé ? Les idées s'enchaînent-elles logiquement ?
+          - **Engagement et émotions** : Le discours est-il captivant ? L'orateur transmet-il des émotions appropriées ?
+          - **Impact et persuasion** : Le discours atteint-il son objectif ? Est-il persuasif ?
+          - **Erreurs courantes à éviter** : Identifie les erreurs typiques et propose des alternatives.
+          
+          Fournis un score global sur 100, un feedback général équilibré (points forts et points à améliorer), et des conseils actionnables et spécifiques.
           Réponds uniquement avec un objet JSON valide au format suivant:
           {
-            "fluidity": "Commentaire sur la fluidité",
-            "clarity": "Commentaire sur la clarté",
-            "vocabulary": "Commentaire sur le vocabulaire",
-            "structure": "Commentaire sur la structure",
-            "emotions": "Commentaire sur les émotions transmises",
-            "errorsToAvoid": "Erreurs spécifiques à éviter",
-            "overallFeedback": "Feedback général et points forts",
-            "practicalAdvice": ["Conseil 1", "Conseil 2", "Conseil 3"],
+            "fluidity": "Commentaire détaillé sur la fluidité et le rythme",
+            "clarity": "Commentaire détaillé sur la clarté et la concision",
+            "vocabulary": "Commentaire détaillé sur le vocabulaire et le langage",
+            "structure": "Commentaire détaillé sur la structure et la logique",
+            "emotions": "Commentaire détaillé sur l'engagement et les émotions transmises",
+            "impact": "Commentaire détaillé sur l'impact et la persuasion",
+            "errorsToAvoid": "Erreurs spécifiques à éviter avec des exemples",
+            "overallFeedback": "Feedback général équilibré (points forts et points à améliorer)",
+            "practicalAdvice": ["Conseil pratique 1", "Conseil pratique 2", "Conseil pratique 3", "Conseil pratique 4"],
             "score": "Score global sur 100"
           }`
         },
@@ -144,6 +159,15 @@ export const SpeechAnalysisSection: React.FC<SpeechAnalysisSectionProps> = ({
       setIsAnalyzingSpeech(false);
       setAnalysisProgress(0);
       setAnalysisStep('');
+    }
+  };
+
+  const handlePlayRecording = () => {
+    if (recordingState.currentRecording?.blob) {
+      const audioUrl = URL.createObjectURL(recordingState.currentRecording.blob);
+      const audio = new Audio(audioUrl);
+      audio.play();
+      audio.onended = () => URL.revokeObjectURL(audioUrl);
     }
   };
 
@@ -180,6 +204,7 @@ export const SpeechAnalysisSection: React.FC<SpeechAnalysisSectionProps> = ({
                 onPauseRecording={handlePauseRecording}
                 onResumeRecording={handleResumeRecording}
                 onStopRecording={onStopRecordingAndAnalyze} // Use local handler to trigger analysis
+                onPlayRecording={handlePlayRecording} // Pass the play handler
                 isTranscribing={isAnalyzingSpeech}
                 compact={true}
               />
@@ -232,6 +257,7 @@ export const SpeechAnalysisSection: React.FC<SpeechAnalysisSectionProps> = ({
                 <MarkdownRenderer content={`**Vocabulaire:** ${speechAnalysisResult.vocabulary}`} />
                 <MarkdownRenderer content={`**Structure:** ${speechAnalysisResult.structure}`} />
                 <MarkdownRenderer content={`**Émotions:** ${speechAnalysisResult.emotions}`} />
+                <MarkdownRenderer content={`**Impact et Persuasion:** ${speechAnalysisResult.impact}`} /> {/* Added Impact */}
                 <MarkdownRenderer content={`**Erreurs à éviter:** ${speechAnalysisResult.errorsToAvoid}`} />
                 <div>
                   <h4 className="font-semibold text-md mb-2">Conseils Pratiques:</h4>

@@ -12,7 +12,7 @@ interface AudioRecordingControlsProps {
   onResumeRecording: () => void;
   onStopRecording: () => void;
   onTranscribe?: () => void;
-  onPlayRecording?: () => void;
+  onPlayRecording?: () => void; // Added onPlayRecording prop
   onDownload?: () => void;
   isTranscribing?: boolean;
   compact?: boolean;
@@ -25,7 +25,7 @@ export const AudioRecordingControls: React.FC<AudioRecordingControlsProps> = ({
   onResumeRecording,
   onStopRecording,
   onTranscribe,
-  onPlayRecording,
+  onPlayRecording, // Destructure the new prop
   onDownload,
   isTranscribing = false,
   compact = false
@@ -114,7 +114,8 @@ export const AudioRecordingControls: React.FC<AudioRecordingControlsProps> = ({
   };
 
   const renderPostRecordingActions = () => {
-    if (isRecording || isPaused || (!onTranscribe && !onPlayRecording && !onDownload)) return null;
+    // Only show actions if not recording or paused, and if there's a current recording
+    if (isRecording || isPaused || !recordingState.currentRecording) return null;
 
     return (
       <div className="flex gap-2 mt-2">
