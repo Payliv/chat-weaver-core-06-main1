@@ -31,7 +31,8 @@ export const HeroSection = () => {
           <Button 
             size="lg" 
             variant="outline" 
-            onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
+            onClick={() => navigate('/features')} 
+            // Updated to navigate to /features
             className="text-xl px-12 py-8"
           >
             Voir les fonctionnalités

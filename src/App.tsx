@@ -7,7 +7,6 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import Settings from "./pages/Settings";
-// import Team from "./pages/Team"; // Removed import
 import Billing from "./pages/Billing";
 import Landing from "./pages/Landing";
 import NewLanding from "./pages/NewLanding";
@@ -15,7 +14,6 @@ import SuperAdminDashboard from "./pages/SuperAdminDashboard";
 import ResetPassword from "./pages/ResetPassword";
 import UpdatePassword from "./pages/UpdatePassword";
 import AcceptInvitation from "./pages/AcceptInvitation";
-// import ShareSubscription from "./pages/ShareSubscription"; // Removed import
 import Ebooks from "./pages/Ebooks";
 import DalleStudio from "./pages/DalleStudio";
 import TTSStudio from "./pages/TTSStudio";
@@ -26,7 +24,8 @@ import DocumentStudio from "./pages/DocumentStudio";
 import SocialMediaStudio from "./pages/SocialMediaStudio";
 import LegalNotice from "./pages/LegalNotice";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
-import PublicSpeakingStudio from "./pages/PublicSpeakingStudio"; // New import
+import PublicSpeakingStudio from "./pages/PublicSpeakingStudio";
+import FeaturesPage from "./pages/FeaturesPage"; // New import
 
 const App = () => (
   <TooltipProvider>
@@ -41,9 +40,7 @@ const App = () => (
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/update-password" element={<UpdatePassword />} />
         <Route path="/settings" element={<Settings />} />
-        {/* <Route path="/team" element={<Team />} /> Removed route */}
         <Route path="/team/accept-invitation" element={<AcceptInvitation />} />
-        {/* <Route path="/share-subscription" element={<ShareSubscription />} /> Removed route */}
         <Route path="/speech-to-text" element={<SpeechToText />} />
         <Route path="/ebooks" element={<Ebooks />} />
         <Route path="/dalle-studio" element={<DalleStudio />} />
@@ -56,7 +53,8 @@ const App = () => (
         <Route path="/super-admin" element={<SuperAdminDashboard />} />
         <Route path="/legal-notice" element={<LegalNotice />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-        <Route path="/public-speaking-studio" element={<PublicSpeakingStudio />} /> {/* New route */}
+        <Route path="/public-speaking-studio" element={<PublicSpeakingStudio />} />
+        <Route path="/features" element={<FeaturesPage />} /> {/* New route */}
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="*" element={<NotFound />} />
       </Routes>
