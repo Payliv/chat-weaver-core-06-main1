@@ -57,7 +57,7 @@ const Landing = () => {
       images: '10 images DALL·E 3 + Runware / mois',
       tts: 'OpenAI Standard TTS uniquement',
       minutes: '100 min inclus',
-      limits: '+50 FCFA/min TTS au-delà, +500 FCFA/image',
+      limits: '📱 Génération de contenu Social Media illimitée, 🗣️ Prise de Parole: 5 min/jour, +50 FCFA/min TTS au-delà, +500 FCFA/image',
       key: 'starter',
       icon: Shield,
       popular: false
@@ -70,7 +70,7 @@ const Landing = () => {
       images: '50 images DALL·E 3 + Runware / mois',
       tts: 'OpenAI HD TTS + Google WaveNet',
       minutes: '500 min inclus',
-      limits: 'Forfait illimité au-delà, images illimitées',
+      limits: '📱 Génération de contenu Social Media illimitée, 🗣️ Prise de Parole: Illimitée, Forfait illimité au-delà, images illimitées',
       key: 'pro',
       icon: Zap,
       popular: true
@@ -83,7 +83,7 @@ const Landing = () => {
       images: 'Images DALL·E 3 + Runware illimité',
       tts: 'OpenAI HD + Google WaveNet + voix premium',
       minutes: 'Minutes TTS illimité',
-      limits: 'Support prioritaire, gestion équipes',
+      limits: '📱 Génération de contenu Social Media illimitée, 🗣️ Prise de Parole: 25 min/jour, Support prioritaire, gestion équipes',
       key: 'business',
       icon: Star,
       popular: false
@@ -96,7 +96,7 @@ const Landing = () => {
       images: 'Images DALL·E 3 + Runware illimité',
       tts: 'Voix personnalisées + options avancées',
       minutes: 'Minutes TTS illimité',
-      limits: 'SLA, support dédié, API complet',
+      limits: '📱 Génération de contenu Social Media illimitée, 🗣️ Prise de Parole: Illimitée, SLA, support dédié, API complet',
       key: 'enterprise',
       icon: Star,
       popular: false
