@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Users, Mail, Clock, Loader2, CheckCircle, XCircle, RefreshCw, Crown, Shield, UserPlus, UserX, User } from 'lucide-react';
+import { ArrowLeft, Users, Mail, Clock, Loader2, CheckCircle, XCircle, RefreshCw, Crown, Shield, UserPlus, UserX, User, Info } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 
@@ -302,6 +302,25 @@ export default function ShareSubscription() {
               </CardHeader>
 
               <div className="space-y-6">
+                {/* Message informatif sur le partage */}
+                <div className="p-4 border border-blue-300 rounded-lg bg-blue-50/50 text-blue-800 flex items-start gap-3">
+                  <Info className="w-5 h-5 text-blue-600 flex-shrink-0 mt-1" />
+                  <div>
+                    <p className="font-medium text-sm mb-1">
+                      Partagez votre abonnement avec votre équipe !
+                    </p>
+                    <p className="text-xs">
+                      Votre plan actuel ({sharerSubInfo?.subscriptionTier}) vous permet de partager l'accès avec 
+                      jusqu'à <strong>{sharerSubInfo?.shareLimit} personnes</strong>.
+                      <br />
+                      Vous pouvez soit inviter des utilisateurs via leur email (ils devront s'inscrire ou se connecter avec cet email), 
+                      soit leur communiquer directement vos identifiants de connexion pour un accès immédiat.
+                      <br />
+                      <span className="font-semibold">Rappel :</span> Le plan Pro permet de partager avec 5 personnes, et le plan Business avec 20 personnes.
+                    </p>
+                  </div>
+                </div>
+
                 {/* Share/Revoke Form */}
                 <div className="p-4 border rounded-lg space-y-3">
                   <h3 className="font-semibold flex items-center gap-2">
